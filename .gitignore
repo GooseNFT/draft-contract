@@ -1,0 +1,13 @@
+
+# Dependency directories
+node_modules/
+
+
+# contract related
+artifacts
+
+
+
+# others
+cache/
+.DS_Store
