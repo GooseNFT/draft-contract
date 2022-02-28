@@ -142,7 +142,14 @@ contract Goose is IGoose, Traits, ERC721Enumerable, Pausable {
     * @return the ID of the randomly selected trait
     */
     function selectTrait(uint16 seed, uint8 traitType) internal view returns (uint8) {
+        console.log("traitType:", traitType, "  length: ", traitType_length[traitType]);
         return uint8((seed % uint16(traitType_length[traitType]) ));
+    }
+
+    function gettraitType_length() public view {
+        for ( uint i =0; i < 7; i++ ){
+            console.log("traitType_length(", i, ") = ", traitType_length[uint8(i)]);
+        }
     }
 
     /**

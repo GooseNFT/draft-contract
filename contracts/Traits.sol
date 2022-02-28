@@ -3,6 +3,7 @@
 pragma solidity ^0.8.0;
 
 import "./Ownable.sol";
+import "hardhat/console.sol";
 
 
 abstract contract Traits is  Ownable{
@@ -38,6 +39,7 @@ abstract contract Traits is  Ownable{
         require( traitTypes.length > 0, "traitTypes is not set yet" );
         require( traitType <= traitTypes.length - 1, "traitType is out of range" );
         traitType_length[traitType] = uint8(traits.length);
+        //console.log("traitType: ", traitType, " => traits.length:", uint8(traits.length));
         for (uint i = 0; i < traits.length; i++) {
             require( bytes(traitData[traitType][traitIds[i]].name).length == 0, "modification traitData is not allowed" );
             traitData[traitType][traitIds[i]] = Trait(
@@ -49,7 +51,11 @@ abstract contract Traits is  Ownable{
 
       /** RENDER */
 
-
+    function gettraitType_length_base() public view {
+        for ( uint i =0; i < 7; i++ ){
+            console.log("traitType_length(", i, ") = ", traitType_length[uint8(i)]);
+        }
+    }
 
   /**
    * generates an <image> element using base64 encoded PNGs

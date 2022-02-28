@@ -7,4 +7,12 @@ require("@nomiclabs/hardhat-waffle")
  */
 module.exports = {
   solidity: "0.8.11",
+  networks: {
+    hardhat: {
+      mining: {
+        auto: true,
+        interval: 1000
+      }
+    }
+  }
 };
