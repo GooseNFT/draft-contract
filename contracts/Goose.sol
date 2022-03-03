@@ -181,4 +181,119 @@ contract Goose is IGoose, Traits, ERC721Enumerable, Pausable {
         return IERC721Receiver.onERC721Received.selector;
     }
 
+
+    function getTokenTraits(uint256 tokenId) public view returns (Goose memory) {
+    return tokenTraits[tokenId];
+  }
+
+    function drawSVG(uint256 tokenId) public view returns (string memory) {
+    Goose memory s = getTokenTraits(tokenId);
+    string memory svgString = string(abi.encodePacked(
+      drawTrait(traitData[0][s.body]),
+      drawTrait(traitData[1][s.eye]),
+      drawTrait(traitData[2][s.hat]),
+      drawTrait(traitData[3][s.legs]),
+      drawTrait(traitData[4][s.mouth]),
+      drawTrait(traitData[5][s.mouthAcc]),
+      drawTrait(traitData[6][s.neck])
+    ));
+
+    return string(abi.encodePacked(
+      '<svg id="woolf" width="100%" height="100%" version="1.1" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">',
+      svgString,
+      "</svg>"
+    ));
+  }
+
+    function toString(uint256 value) internal pure returns (string memory) {
+        // Inspired by OraclizeAPI's implementation - MIT licence
+        // https://github.com/oraclize/ethereum-api/blob/b42146b063c7d6ee1358846c198246239e9360e8/oraclizeAPI_0.4.25.sol
+
+        if (value == 0) {
+            return "0";
+        }
+        uint256 temp = value;
+        uint256 digits;
+        while (temp != 0) {
+            digits++;
+            temp /= 10;
+        }
+        bytes memory buffer = new bytes(digits);
+        while (value != 0) {
+            digits -= 1;
+            buffer[digits] = bytes1(uint8(48 + uint256(value % 10)));
+            value /= 10;
+        }
+        return string(buffer);
+    }
+function tokenURI(uint256 tokenId) public view override returns (string memory) {
+    require(_exists(tokenId), "ERC721Metadata: URI query for nonexistent token");
+
+
+    string memory metadata = string(abi.encodePacked(
+      '{"name":  "Goose #"',toString(tokenId),',', 
+      '"description": "Goose Wonder Land", "image": "data:image/svg+xml;base64,',
+      base64(bytes(drawSVG(tokenId))),
+      '", "attributes":',
+      compileAttributes(tokenId),
+      "}"
+    ));
+
+    return string(abi.encodePacked(
+      "data:application/json;base64,",
+      base64(bytes(metadata))
+    ));
+  }
+
+    function attributeForTypeAndValue(string memory traitType, string memory value) internal pure returns (string memory) {
+    return string(abi.encodePacked(
+      '{"trait_type":"',
+      traitType,
+      '","value":"',
+      value,
+      '"}'
+    ));
+  }
+
+  function getGeneration( uint tokenId ) internal view returns (uint){
+        if (tokenId <= PAID_TOKENS) return 0;
+        if (tokenId <= MAX_TOKENS * 2 / 5) return 1;
+        if (tokenId <= MAX_TOKENS * 4 / 5) return 2;
+        return 3;
+  }
+
+  /**
+   * generates an array composed of all the individual traits and values
+   * @param tokenId the ID of the token to compose the metadata for
+   * @return a JSON array of all of the attributes for given token ID
+   */
+  function compileAttributes(uint256 tokenId) public view returns (string memory) {
+    Goose memory s = getTokenTraits(tokenId);
+    string memory traits;
+      traits = string(abi.encodePacked(
+        attributeForTypeAndValue(traitTypes[0], traitData[0][s.body].name),',',
+        attributeForTypeAndValue(traitTypes[1], traitData[1][s.eye].name),',',
+        attributeForTypeAndValue(traitTypes[2], traitData[2][s.hat].name),',',
+        attributeForTypeAndValue(traitTypes[3], traitData[3][s.legs].name),',',
+        attributeForTypeAndValue(traitTypes[4], traitData[4][s.mouth].name),',',
+        attributeForTypeAndValue(traitTypes[5], traitData[5][s.mouthAcc].name),',',
+        attributeForTypeAndValue(traitTypes[6], traitData[7][s.neck].name),','
+      ));
+
+    return string(abi.encodePacked(
+      '[',
+      traits,
+      '{"trait_type":"Generation","value":',
+      getGeneration(tokenId),
+      '}]'
+    ));
+  }
+
+   /**
+   * allows owner to withdraw funds from minting
+   */
+  function withdraw() external onlyOwner {
+    payable(owner()).transfer(address(this).balance);
+  }
+
 }
