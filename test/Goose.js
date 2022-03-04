@@ -42,13 +42,15 @@ describe( "GooseNFT Contracts Test", function(){
 
 
         
-        barn  = await Barn.deploy();
         //eggaddress = await egg.address;
-        goose = await Goose.deploy(egg.address, barn.address, 50000);
+        goose = await Goose.deploy(egg.address, 50000);
 
         //await goose.deployed();
         
-        //croco = await CrocoDao.deploy();
+        croco = await CrocoDao.deploy(egg.address, 888);
+
+        barn  = await Barn.deploy(egg.address, goose.address, croco.address);
+
         //console.log("run once of beforeEach");
 
         var fs = require('fs');
@@ -112,7 +114,7 @@ describe( "GooseNFT Contracts Test", function(){
     });
 
     
-
+/* 
     describe( "Deployment", function(){
         it("Should set the right owner", async function(){
             expect(await goose.owner()).to.equal(owner.address);
@@ -200,7 +202,7 @@ describe( "GooseNFT Contracts Test", function(){
     
             egg   = await GEgg.deploy();
             barn  = await Barn.deploy();
-            goose = await Goose.deploy(egg.address, barn.address, 50000);
+            goose = await Goose.deploy(egg.address, 50000);
     
             const egg_r = await egg.deployTransaction.wait();
             const barn_r = await barn.deployTransaction.wait();
@@ -234,11 +236,7 @@ describe( "GooseNFT Contracts Test", function(){
  
             //ethers.providers.Provider.
 
-            /*
-            provider.once(transactionHash, function(transaction) {
-                console.log('Transaction Minded: ' + transaction.hash);
-                console.log(transaction);
-            );*/
+
 
             const balance_after  = await user1.getBalance();
             const account_balance_after = await ethers.provider.getBalance(goose.address);
@@ -261,6 +259,10 @@ describe( "GooseNFT Contracts Test", function(){
             expect(r4).to.be.equal(5);
             const token1 = await goose.tokenURI(r4);
             const token2 = await goose.tokenURI(await goose.tokenOfOwnerByIndex(user1.address,0))
+            var fs = require('fs');
+            for( var i = 0; i < 5; i++ ){
+                fs.writeFileSync('./output/'+i+".svg", await goose.drawSVG(i));
+            }
             //console.log(token1)
             //console.log(token2)
             //console.log(ethers.provider);
@@ -277,12 +279,54 @@ describe( "GooseNFT Contracts Test", function(){
             //console.log(r5);
             //console.log(r2);
             //console.log(r3);
-
-            
-        
-
         });
     });
 
+   */ 
 
+    describe( "Staking Games", function(){
+        it( "Case 1: Goose Stake", async function(){
+            this.timeout(100000);
+
+            const opt_overides = {value: ethers.utils.parseEther("0.08")};
+            const nUsers  = users.length;
+            //const nUsers  = 1;
+            for ( var i = 0; i < nUsers; i++ ){
+                var r1 = await (await  goose.connect(users[i]).mint(1, opt_overides)).wait();
+            }
+            var fs = require('fs');
+            console.log("User Amount:", users.length);
+
+            for( var i = 0; i < nUsers; i++ ){
+                //fs.writeFileSync('./output/staking-'+i+".svg", await goose.drawSVG(i));
+            }
+
+            await expect(goose.tokenOfOwnerByIndex(user1.address,0)).to.be.revertedWith("ERC721Enumerable: owner index out of bounds");
+
+            var randomInt = 0;
+            await barn.seasonOpen();
+            for( var i = 0; i < nUsers; i++ ){
+                randomInt = Math.floor(Math.random() * (Number.MAX_SAFE_INTEGER - 1 ) );
+                var myTokenId = await goose.tokenOfOwnerByIndex(users[i].address,0)
+                await barn.connect(users[i]).stakeGoose2Pool( randomInt % 10, [myTokenId] );
+            }
+            const opt_overides2 = {gasLimit: 1562664};
+            await barn.seasonClose(opt_overides2);
+            const s0 = await barn.seasonHistory(0);
+            const s1 = await barn.seasonHistory(1);
+            console.log("---------barn.seasonHistory--------")
+            console.log(s0,s1);
+            var myTokenId = await goose.tokenOfOwnerByIndex(users[0].address,0);
+            const r = await barn.gooseStake(myTokenId);
+            expect(r['owner']).to.be.equal(users[0].address)
+            
+            for( var i = 0; i < 10; i++ ){
+                const count = await barn.getGooseSetNum(i);
+                console.log("Pool #", i, " = ", count);
+            }
+
+            //console.log(r)
+
+        });
+    });
 } )

@@ -36,7 +36,7 @@ contract Goose is IGoose, Traits, ERC721Enumerable, Pausable {
     GEGG public egg;
 
 
-    constructor(address _gegg, address _barn, uint256 _maxTokens) ERC721("GooseEgg Game", "GGAME") { 
+    constructor(address _gegg, uint256 _maxTokens) ERC721("GooseEgg Game", "GGAME") { 
         egg = GEGG(_gegg);
         MAX_TOKENS = _maxTokens;
         PAID_TOKENS = MAX_TOKENS / 5;
@@ -199,7 +199,7 @@ contract Goose is IGoose, Traits, ERC721Enumerable, Pausable {
     ));
 
     return string(abi.encodePacked(
-      '<svg id="woolf" width="100%" height="100%" version="1.1" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">',
+      '<svg id="Goose" width="100%" height="100%" version="1.1" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">',
       svgString,
       "</svg>"
     ));

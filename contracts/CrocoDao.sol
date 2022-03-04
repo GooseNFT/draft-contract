@@ -35,7 +35,7 @@ contract CrocoDao is ICrocoDao, Traits, ERC721Enumerable, Pausable {
     GEGG public egg;
 
 
-    constructor(address _gegg, address _barn, uint256 _maxTokens) ERC721("GooseEgg Game", "GGAME") { 
+    constructor(address _gegg, uint256 _maxTokens) ERC721("GooseEgg Game", "GGAME") { 
         egg = GEGG(_gegg);
         MAX_TOKENS = _maxTokens;
     }

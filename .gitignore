@@ -10,4 +10,5 @@ artifacts
 
 # others
 cache/
+output/
 .DS_Store

@@ -13,6 +13,9 @@ module.exports = {
       mining: {
         auto: true,
         interval: 1000
+      },
+      accounts: {
+        count: 100
       }
     }
   }

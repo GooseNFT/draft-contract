@@ -64,7 +64,7 @@ abstract contract Traits is  Ownable{
    */
   function drawTrait(Trait memory trait) internal pure returns (string memory) {
     return string(abi.encodePacked(
-      '<image x="4" y="4" width="32" height="32" image-rendering="pixelated" preserveAspectRatio="xMidYMid" xlink:href="data:image/png;base64,',
+      '<image x="4" y="4" width="72" height="72" image-rendering="pixelated" preserveAspectRatio="xMidYMid" xlink:href="data:image/png;base64,',
       trait.png,
       '"/>'
     ));
