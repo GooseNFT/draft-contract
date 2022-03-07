@@ -319,13 +319,45 @@ describe( "GooseNFT Contracts Test", function(){
             var myTokenId = await goose.tokenOfOwnerByIndex(users[0].address,0);
             const r = await barn.gooseStake(myTokenId);
             expect(r['owner']).to.be.equal(users[0].address)
-            
+            var ranks = new Array(3);
             for( var i = 0; i < 10; i++ ){
                 const count = await barn.getGooseSetNum(i);
+                const rank = await barn.getRank(i, s0['pondWinners']);
+                if (rank != 0 ){
+                    ranks[rank-1] = i;
+                }
                 console.log("Pool #", i, " = ", count);
             }
+            console.log("ranks: ", ranks);
+            var checkNumber;
+            ranks.forEach((v,i)=>{
+                checkNumber |= v;
+                if ( i < 2 ){
+                    checkNumber <<= 4;
+                }
+            })
+            expect(checkNumber).to.be.equal(s0['pondWinners']);
+            console.log("genisisBlockNumber = ", await barn.genisisBlockNumber());
+            const poolDrations = await barn.getTotalGooseStakeDurationPerPond(0);
+            console.log("getTotalGooseStakeDurationPerPond:", poolDrations);
+            var poolDrationsum = 0;
+            poolDrations.forEach(v=>poolDrationsum+=v);
+            console.log("getTotalGooseStakeDurationPerPond Sum:", poolDrationsum);
+            var rewardSum = BigNumber.from(0);
+            var durationSum = BigNumber.from(0);
+            for( var i = 0; i < nUsers; i++ ){
+                var myTokenId = await goose.tokenOfOwnerByIndex(users[i].address,0);
+                const res = await barn.connect(users[i]).gooseClaimToBalance([myTokenId]);
+                //console.log("res:   ",res)
+                //durationSum = durationSum.add(res);
+                const r = await barn.gooseStake(myTokenId);
+                //console.log(r);
+                rewardSum = rewardSum.add(r['unclaimedBalance']);
+                console.log("Token #", myTokenId, " claimed:", r['unclaimedBalance']);
+            }
 
-            //console.log(r)
+            console.log("rewardsSum  = ", rewardSum);
+            //console.log("durationSum = ", durationSum)
 
         });
     });
