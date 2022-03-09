@@ -15,7 +15,8 @@ import "hardhat/console.sol";
 
 contract Barn is IBarn, Ownable,  Pausable {
 
-    uint constant multiplier = 10**18;
+    //uint constant multiplier = 10**18;
+    uint constant multiplier = 1;
     uint16 public constant SEASON_DURATION  =  100;
     uint16 public constant SEASON_REST  =  10;
     uint public constant GEGG_DAILY_LIMIT = 1000000 * multiplier;
@@ -70,8 +71,7 @@ contract Barn is IBarn, Ownable,  Pausable {
     mapping( Pool => EnumerableSet.UintSet ) poolGoose;  // Pool to tokenIds[]
     mapping( Pool => EnumerableSet.UintSet ) poolCroco;  // Pool to tokenIds[]
 
-    mapping( Pool => uint16 ) public poolRealNumber;
-    mapping( Pool => uint16 ) public poolVotedNumber;
+
 
     Goose goose;
     address __goose;
@@ -85,8 +85,8 @@ contract Barn is IBarn, Ownable,  Pausable {
         croco = CrocoDao(_croco);
     }
 
-    function getGooseSetNum( Pool _pool ) public view returns (uint, uint) {
-        return (poolGoose[_pool].length(), poolRealNumber[_pool]);
+    function getGooseSetNum( Pool _pool ) public view returns (uint) {
+        return poolGoose[_pool].length();
     }
 
      function testGas_init( ) external {
@@ -196,14 +196,16 @@ contract Barn is IBarn, Ownable,  Pausable {
         _isSeasonOpen = false;
         lastCloseBlockNumber = block.number;
 
+
+        uint[] memory poolGooseCounter = new uint[](10);
+        uint[] memory poolVoteCounter = new uint[](10);
+
+
         uint32 curSeasonSeq = getCurrentSeasonID();
         console.log("curSeasonSeq: ", curSeasonSeq);
         seasonHistory[curSeasonSeq].blockNumber = uint32(block.number);
 
-        for ( uint8 i = uint8(Pool.Barn); i <= uint8(Pool.Pond9); i++ ){
-            poolRealNumber[Pool(i)] = 0;
-            poolVotedNumber[Pool(i)] = 0;
-        }
+
         for ( uint8 i = uint8(Pool.Barn); i <= uint8(Pool.Pond9); i++ ){
             // todo: poolRealNumber need to be reset in each round.
 
@@ -212,10 +214,10 @@ contract Barn is IBarn, Ownable,  Pausable {
                 uint32 _seasonSeq = getSeasonID(gooseStake[tokenID].blockNumber);
                 if( _seasonSeq < curSeasonSeq ){
                     // _seasonSeq is before the curSeasonSeq, indicates this Goose is not switched during this season. it should be counted in the Barn. 
-                    poolRealNumber[Pool.Barn] += 1; // this info seems useless, todo: may neeed to be omitted.
+                    poolGooseCounter[uint8(Pool.Barn)] += 1; // this info seems useless, todo: may neeed to be omitted.
                     seasonHistory[curSeasonSeq].totalGooseStakeDurationPerPond[uint(Pool.Barn)] += SEASON_DURATION;
                 }else{
-                    poolRealNumber[Pool(i)] += 1;
+                    poolGooseCounter[i] += 1;
                     seasonHistory[curSeasonSeq].totalGooseStakeDurationPerPond[i] += (uint32(block.number) - gooseStake[tokenID].blockNumber);
                 }
             }
@@ -224,56 +226,56 @@ contract Barn is IBarn, Ownable,  Pausable {
                 uint16 tokenID = uint16(poolCroco[Pool(i)].at(j));
                 uint32 _seasonSeq = getSeasonID(crocoStake[tokenID].blockNumber);
                 if( _seasonSeq < curSeasonSeq ){
-                    poolVotedNumber[Pool.Barn] += 1;
+                    poolVoteCounter[uint8(Pool.Barn)] += 1;
                 }else{
-                    poolVotedNumber[Pool(i)] += 1;
+                    poolVoteCounter[i] += 1;
                     seasonHistory[curSeasonSeq].totalCrocoVoteDuratoin += (uint32(block.number) - crocoStake[tokenID].blockNumber);
                 }
             }
         }
 
-        Pool first = Pool.Pond1;
-        Pool second = Pool.Pond2;
-        Pool third = Pool.Pond3;
-        Pool crocoWinner = Pool.Pond1;
+        uint8 first = uint8(Pool.Pond1);
+        uint8 second = uint8(Pool.Pond2);
+        uint8 third = uint8(Pool.Pond3);
+        uint8 crocoWinner = uint8(Pool.Pond1);
         for ( uint8 i = uint8(Pool.Pond1); i <= uint8(Pool.Pond9); i++ ){
-            if ( poolRealNumber[Pool(i)] < poolRealNumber[first]  ){
-                first = Pool(i);
+            if ( poolGooseCounter[i] < poolGooseCounter[first]  ){
+                first = i;
             }
         }
         for ( uint8 i = uint8(Pool.Pond1); i <= uint8(Pool.Pond9); i++ ){
-            if( Pool(i) == first ) continue;
-            if ( poolRealNumber[Pool(i)] < poolRealNumber[second] ){
-                second = Pool(i);
+            if( i == first ) continue;
+            if ( poolGooseCounter[i] < poolGooseCounter[second] ){
+                second = i;
             }else if( second == first ){
-                second = Pool(i);
+                second = i;
             }
         }
         for ( uint8 i = uint8(Pool.Pond1); i <= uint8(Pool.Pond9); i++ ){
-            if( Pool(i) == second || Pool(i) == first ) continue;
-            if ( poolRealNumber[Pool(i)] < poolRealNumber[third] ){
-                third = Pool(i);
+            if( i == second || i == first ) continue;
+            if ( poolGooseCounter[i] < poolGooseCounter[third] ){
+                third = i;
             }else if( third == second || third == first ){
-                third = Pool(i);
+                third = i;
             }
         }
         for ( uint8 i = uint8(Pool.Pond1); i <= uint8(Pool.Pond9); i++ ){
-            if ( poolVotedNumber[Pool(i)] > poolVotedNumber[third] ){
-                crocoWinner = Pool(i);
+            if ( poolVoteCounter[i] > poolVoteCounter[third] ){
+                crocoWinner = i;
             }
         }
 
         uint16 winners = 0;
-        winners |= uint16(first);
+        winners |= first;
         winners <<= 4;
-        winners |= uint16(second);
+        winners |= second;
         winners <<= 4;
-        winners |= uint16(third);
-        console.log("first:", uint16(first));
-        console.log("second:", uint16(second));
-        console.log("third:", uint16(third));
+        winners |= third;
+        console.log("first:", first);
+        console.log("second:", second);
+        console.log("third:", third);
         seasonHistory[curSeasonSeq].pondWinners = winners;
-        seasonHistory[curSeasonSeq].crocoVotedWiner = uint8(crocoWinner);
+        seasonHistory[curSeasonSeq].crocoVotedWiner = crocoWinner;
 
     }
 
