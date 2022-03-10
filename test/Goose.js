@@ -170,6 +170,7 @@ describe( "GooseNFT Contracts Test", function(){
             await expect(barn.seasonClose()).to.be.revertedWith("Error: VM Exception while processing transaction: reverted with reason string 'Season is already Closed'");
             
         })
+        /*
         it( "Case 3: seasonClose with empty players", async function(){
             await barn.seasonOpen();
             await new Promise(resolve => setTimeout(resolve, 5000));
@@ -185,7 +186,7 @@ describe( "GooseNFT Contracts Test", function(){
             //expect(barn.seasonHistory(0))
             //await expect(barn.seasonClose()).to.be.revertedWith("Error: VM Exception while processing transaction: reverted with reason string 'Season is already Closed'");
             
-        })
+        })*/
 
 
     });
@@ -202,9 +203,18 @@ describe( "GooseNFT Contracts Test", function(){
             GEgg     = await ethers.getContractFactory("GEGG");
             Barn     = await ethers.getContractFactory("Barn");
     
+
             egg   = await GEgg.deploy();
-            barn  = await Barn.deploy();
-            goose = await Goose.deploy(egg.address, 50000);
+            //const r = await (await egg.owner()).wait();
+    
+            croco = await CrocoDao.deploy(egg.address, 888);
+    
+    
+            barn  = await Barn.deploy(egg.address, croco.address);
+    
+            
+            //eggaddress = await egg.address;
+            goose = await Goose.deploy(egg.address,barn.address, 50000);
     
             const egg_r = await egg.deployTransaction.wait();
             const barn_r = await barn.deployTransaction.wait();

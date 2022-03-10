@@ -15,8 +15,8 @@ import "hardhat/console.sol";
 
 contract Barn is IBarn, Ownable,  Pausable {
 
-    uint constant multiplier = 10**18;
-    //uint constant multiplier = 1;
+    //uint constant multiplier = 10**18;
+    uint constant multiplier = 1;
     uint16 public constant SEASON_DURATION  =  120;
     uint16 public constant SEASON_REST  =  10;
     uint public constant GEGG_DAILY_LIMIT = 1000000 * multiplier;
@@ -45,7 +45,7 @@ contract Barn is IBarn, Ownable,  Pausable {
         uint32 blockNumber;
         uint16 pondWinners;  // indicate top 3 Ponds.
         uint8  crocoVotedWiner;
-        uint32 totalCrocoVoteDuratoin;
+        uint32 totalCrocoVoteDuratoin; // typo
         uint32[10] totalGooseStakeDurationPerPond;
     }
 
@@ -334,11 +334,11 @@ contract Barn is IBarn, Ownable,  Pausable {
                         pond_rewards = GEGG_DAILY_LIMIT * 7 / 10 * 4 / 6 -  GEGG_DAILY_LIMIT * 7 / 10 * rank / 6;
                     }
 
-                    if ( pool == Pool(seasonHistory[j].crocoVotedWiner) ){
+                    if ( pool == Pool(seasonHistory[j].crocoVotedWiner) ){ // typo
                         //pond_rewards = 0;
                     }
                     uint32 iDuration = ( seasonHistory[j].blockNumber - genisisBlockNumber ) % (SEASON_DURATION + SEASON_REST);
-                    uint32 nearestOpenBlock = seasonHistory[j].blockNumber - iDuration;
+                    uint32 nearestOpenBlock = seasonHistory[j].blockNumber - iDuration; // previous
 
                     if( gooseStake[tokenIds[i]].blockNumber < nearestOpenBlock ){
                         //iDuration = ( seasonHistory[j].blockNumber - genisisBlockNumber ) % (SEASON_DURATION + SEASON_REST);
@@ -359,7 +359,7 @@ contract Barn is IBarn, Ownable,  Pausable {
                 }
                 
             }
-            
+            // todo: change stake blockNumber of NFT after claim, move it from Pond to Barn.
         }
         console.log("gooseClaimToBalance / totalDuration = ", totalDuration );
         return totalDuration;
