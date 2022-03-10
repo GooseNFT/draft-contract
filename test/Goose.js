@@ -40,16 +40,18 @@ describe( "GooseNFT Contracts Test", function(){
         egg   = await GEgg.deploy();
         //const r = await (await egg.owner()).wait();
 
+        croco = await CrocoDao.deploy(egg.address, 888);
+
+
+        barn  = await Barn.deploy(egg.address, croco.address);
 
         
         //eggaddress = await egg.address;
-        goose = await Goose.deploy(egg.address, 50000);
+        goose = await Goose.deploy(egg.address,barn.address, 50000);
 
         //await goose.deployed();
         
-        croco = await CrocoDao.deploy(egg.address, 888);
 
-        barn  = await Barn.deploy(egg.address, goose.address, croco.address);
 
         //console.log("run once of beforeEach");
 
@@ -114,7 +116,7 @@ describe( "GooseNFT Contracts Test", function(){
     });
 
     
-/* 
+
     describe( "Deployment", function(){
         it("Should set the right owner", async function(){
             expect(await goose.owner()).to.equal(owner.address);
@@ -282,7 +284,7 @@ describe( "GooseNFT Contracts Test", function(){
         });
     });
 
-   */ 
+
 
     describe( "Staking Games", function(){
         it( "Case 1: Goose Stake", async function(){
@@ -303,26 +305,36 @@ describe( "GooseNFT Contracts Test", function(){
 
             await expect(goose.tokenOfOwnerByIndex(user1.address,0)).to.be.revertedWith("ERC721Enumerable: owner index out of bounds");
 
+
             var randomInt = 0;
+            const start = Date.now();
+            console.log("seasonOpen at          : ", Date.now() - start)
             await barn.seasonOpen();
+            console.log(nUsers, "users stakeGoose2Pool at  : ", Date.now() - start)
             for( var i = 0; i < nUsers; i++ ){
-                randomInt = Math.floor(Math.random() * (Number.MAX_SAFE_INTEGER - 1 ) );
+                randomInt = Math.floor(Math.random() * (Number.MAX_SAFE_INTEGER - 101 ) );
                 var myTokenId = await goose.tokenOfOwnerByIndex(users[i].address,0)
-                await barn.connect(users[i]).stakeGoose2Pool( randomInt % 10, [myTokenId] );
+                await goose.connect(users[i]).stakeGoose2Pool( randomInt % 10, [myTokenId] );
             }
             const opt_overides2 = {gasLimit: 1562664};
+            console.log("seasonClose at          : ", Date.now() - start)
             await barn.seasonClose(opt_overides2);
             const s0 = await barn.seasonHistory(0);
             const s1 = await barn.seasonHistory(1);
             console.log("---------barn.seasonHistory--------")
             console.log(s0,s1);
-            var myTokenId = await goose.tokenOfOwnerByIndex(users[0].address,0);
-            const r = await barn.gooseStake(myTokenId);
-            expect(r['owner']).to.be.equal(users[0].address)
+
+            await expect(goose.tokenOfOwnerByIndex(users[0].address,0)).to.be.revertedWith("ERC721Enumerable: owner index out of bounds");
+
+            var barnToken = await goose.tokenOfOwnerByIndex(barn.address,0);
+            var balanceOf = await goose.balanceOf(barn.address);
+            console.log("barnToken: ", barnToken, "    balanceOf: ", balanceOf);
+            expect(balanceOf.toNumber()).to.be.equal(nUsers)
+
             var ranks = new Array(3);
             for( var i = 0; i < 10; i++ ){
                 const count = await barn.getGooseSetNum(i);
-                const rank = await barn.getRank(i, s0['pondWinners']);
+                const rank = await barn.getRank(i, s1['pondWinners']);
                 if (rank != 0 ){
                     ranks[rank-1] = i;
                 }
@@ -336,27 +348,29 @@ describe( "GooseNFT Contracts Test", function(){
                     checkNumber <<= 4;
                 }
             })
-            expect(checkNumber).to.be.equal(s0['pondWinners']);
+            expect(checkNumber).to.be.equal(s1['pondWinners']);
             console.log("genisisBlockNumber = ", await barn.genisisBlockNumber());
-            const poolDrations = await barn.getTotalGooseStakeDurationPerPond(0);
+            const poolDrations = await barn.getTotalGooseStakeDurationPerPond(1);
             console.log("getTotalGooseStakeDurationPerPond:", poolDrations);
             var poolDrationsum = 0;
             poolDrations.forEach(v=>poolDrationsum+=v);
             console.log("getTotalGooseStakeDurationPerPond Sum:", poolDrationsum);
             var rewardSum = BigNumber.from(0);
             var durationSum = BigNumber.from(0);
+            console.log(nUsers, "users gooseClaimToBalance at  : ", Date.now() - start)
             for( var i = 0; i < nUsers; i++ ){
-                var myTokenId = await goose.tokenOfOwnerByIndex(users[i].address,0);
+                var myTokenId = await barn.getUserStakedGooseIds(users[i].address,0);
                 const res = await barn.connect(users[i]).gooseClaimToBalance([myTokenId]);
                 //console.log("res:   ",res)
                 //durationSum = durationSum.add(res);
                 const r = await barn.gooseStake(myTokenId);
                 //console.log(r);
                 rewardSum = rewardSum.add(r['unclaimedBalance']);
-                console.log("Token #", myTokenId, " claimed:", r['unclaimedBalance']);
+                console.log("Token #", myTokenId.toString(), " claimed:", r['unclaimedBalance'].toString());
             }
-
+            console.log("Done at                     : ", Date.now() - start)
             console.log("rewardsSum  = ", rewardSum);
+            expect(rewardSum.toString().slice(0,-2)).to.be.equal("9".repeat(22));
             //console.log("durationSum = ", durationSum)
 
         });

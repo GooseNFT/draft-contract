@@ -4,12 +4,13 @@ pragma solidity ^0.8.0;
 import "./Pausable.sol";
 import "./ERC721Enumerable.sol";
 import "./IGoose.sol";
+import "./Barn.sol";
 import "./IBarn.sol";
 import "./Traits.sol";
 import "./GEGG.sol";
 
 
-contract Goose is IGoose, Traits, ERC721Enumerable, Pausable {
+contract Goose is IBarn, IGoose, Traits, ERC721Enumerable, Pausable {
     // mint price
     uint256 public constant MINT_PRICE = .08 ether;
     // max number of tokens that can be minted - 50000 in production
@@ -29,15 +30,16 @@ contract Goose is IGoose, Traits, ERC721Enumerable, Pausable {
     // used to ensure there are no duplicates
     mapping(uint256 => uint256) public existingCombinations;
 
-      // reference to the Barn for choosing random Wolf thieves
-    IBarn public barn;
+
+    Barn public barn;
 
     // reference to $GEGG for burning on mint
     GEGG public egg;
 
 
-    constructor(address _gegg, uint256 _maxTokens) ERC721("GooseEgg Game", "GGAME") { 
+    constructor(address _gegg, address _barn, uint256 _maxTokens) ERC721("GooseEgg Game", "GGAME") { 
         egg = GEGG(_gegg);
+        barn = Barn(_barn);
         MAX_TOKENS = _maxTokens;
         PAID_TOKENS = MAX_TOKENS / 5;
     }
@@ -294,6 +296,16 @@ function tokenURI(uint256 tokenId) public view override returns (string memory) 
    */
   function withdraw() external onlyOwner {
     payable(owner()).transfer(address(this).balance);
+  }
+
+
+
+  function stakeGoose2Pool( Pool _pool, uint16[] calldata tokenIds ) external whenNotPaused{
+    barn.stakeGooseConfirm( _msgSender(), _pool, tokenIds);
+    for( uint8 i = 0; i < tokenIds.length; i++ ){
+        // todo: needs check the return to assure security.
+        transferFrom( _msgSender(), address(barn), tokenIds[i] );
+    }
   }
 
 }
