@@ -1,6 +1,9 @@
+## Introdoction
 GooseNFT project is still under heavy development, codes will change without notice, please be careful.
+The dependency projects are:
 
-
+- [Guides to get started](https://hardhat.org/getting-started/)
+- [OpenZeppelin Docs](https://docs.openzeppelin.com/contracts/4.x/)
 
 ## Quick Start
 
@@ -9,7 +12,7 @@ git clone git@github.com:GooseNFT/draft-contract.git
 cd ./draft-contract
 npm install 
 
-npx hardhat test test/Goose.js  # will trigger lots of failure during development stage
+npx hardhat test test/Goose.js  # will trigger some failure during development stage, but will fix it all soon.
 ```
 
 ## Main contracts
