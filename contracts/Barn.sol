@@ -44,8 +44,8 @@ contract Barn is IBarn, Ownable,  Pausable {
     struct SeasonStats{
         uint32 blockNumber;
         uint16 pondWinners;  // indicate top 3 Ponds.
-        uint8  crocoVotedWiner;
-        uint32 totalCrocoVoteDuratoin; // typo
+        uint8  crocoVotedWinner;
+        uint32 totalCrocoVoteDuration; 
         uint32[10] totalGooseStakeDurationPerPond;
     }
 
@@ -234,7 +234,7 @@ contract Barn is IBarn, Ownable,  Pausable {
                     poolVoteCounter[uint8(Pool.Barn)] += 1;
                 }else{
                     poolVoteCounter[i] += 1;
-                    seasonHistory[curSeasonSeq].totalCrocoVoteDuratoin += lastCloseBlockNumber - gooseStake[tokenID].blockNumber;
+                    seasonHistory[curSeasonSeq].totalCrocoVoteDuration += lastCloseBlockNumber - gooseStake[tokenID].blockNumber;
                 }
             }
         }
@@ -284,7 +284,7 @@ contract Barn is IBarn, Ownable,  Pausable {
             console.log("Pool #",i," = ",poolGooseCounter[i]);
         }
         seasonHistory[curSeasonSeq].pondWinners = winners;
-        seasonHistory[curSeasonSeq].crocoVotedWiner = crocoWinner;
+        seasonHistory[curSeasonSeq].crocoVotedWinner = crocoWinner;
 
     }
 
@@ -334,7 +334,7 @@ contract Barn is IBarn, Ownable,  Pausable {
                         pond_rewards = GEGG_DAILY_LIMIT * 7 / 10 * 4 / 6 -  GEGG_DAILY_LIMIT * 7 / 10 * rank / 6;
                     }
 
-                    if ( pool == Pool(seasonHistory[j].crocoVotedWiner) ){ // typo
+                    if ( pool == Pool(seasonHistory[j].crocoVotedWinner) ){ 
                         //pond_rewards = 0;
                     }
                     uint32 iDuration = ( seasonHistory[j].blockNumber - genisisBlockNumber ) % (SEASON_DURATION + SEASON_REST);
@@ -395,7 +395,7 @@ contract Barn is IBarn, Ownable,  Pausable {
     }
 
     function checkSeasonExists( uint32 i) view internal returns (bool) {
-        return ( seasonHistory[i].totalCrocoVoteDuratoin != 0 || seasonHistory[i].pondWinners != 0 );
+        return ( seasonHistory[i].totalCrocoVoteDuration != 0 || seasonHistory[i].pondWinners != 0 );
     }
 
     function printBlockNumber () view public returns ( uint ) {
