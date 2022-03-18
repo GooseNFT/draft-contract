@@ -57,7 +57,7 @@ describe( "GooseNFT Contracts Test", function(){
 
         var fs = require('fs');
 
-        traits_dir = "/Users/freedomhui/Code/GooseBrowser/goosebrowser/public/traits/";
+        traits_dir = "resources/traits-png/";
 
         body_traits = new Map();
 
