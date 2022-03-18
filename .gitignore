@@ -12,3 +12,4 @@ artifacts
 cache/
 output/
 .DS_Store
+package-lock.json
