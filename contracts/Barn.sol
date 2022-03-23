@@ -42,7 +42,8 @@ contract Barn is IBarn, Ownable,  Pausable {
     }
 
     struct SeasonStats{
-        uint32 blockNumber;
+        uint32 openBlockNumber;
+        uint32 closeBlockNumber;
         uint16 pondWinners;  // indicate top 3 Ponds.
         uint8  crocoVotedWinner;
         uint32 totalCrocoVoteDuration; 
@@ -203,26 +204,26 @@ contract Barn is IBarn, Ownable,  Pausable {
         uint[] memory poolVoteCounter = new uint[](10);
 
 
-        uint32 curSeasonSeq = getCurrentSeasonID();
+        uint32 curSeasonSeq = getCurrentSeasonID(); // todo: this might be incorrect because open and close time might not be happend in time.
         console.log("curSeasonSeq: ", curSeasonSeq);
-        seasonHistory[curSeasonSeq].blockNumber = lastCloseBlockNumber;
+        seasonHistory[curSeasonSeq].openBlockNumber = lastOpenBlockNumber;
+        seasonHistory[curSeasonSeq].closeBlockNumber = lastCloseBlockNumber;
 
 
         for ( uint8 i = uint8(Pool.Barn); i <= uint8(Pool.Pond9); i++ ){
             // todo: poolRealNumber need to be reset in each round.
 
             for ( uint j = 0; j < poolGoose[Pool(i)].length(); j++ ){
-                uint32 iDuration = ( lastCloseBlockNumber - genisisBlockNumber ) % (SEASON_DURATION + SEASON_REST);
-                uint32 previousOpenBlock = lastCloseBlockNumber - iDuration;
+                uint32 stakeDuration = lastCloseBlockNumber - lastOpenBlockNumber;
+                //uint32 previousOpenBlock = lastCloseBlockNumber - stakeDuration;
                 uint16 tokenID = uint16(poolGoose[Pool(i)].at(j));
-                if( gooseStake[tokenID].blockNumber < previousOpenBlock ){
+                if( gooseStake[tokenID].blockNumber < lastOpenBlockNumber ){
                     poolGooseCounter[uint8(Pool.Barn)] += 1; 
-                    seasonHistory[curSeasonSeq].totalGooseStakeDurationPerPond[uint(Pool.Barn)] += iDuration;
+                    seasonHistory[curSeasonSeq].totalGooseStakeDurationPerPond[uint(Pool.Barn)] += stakeDuration;
                 }else{
-                    iDuration = lastCloseBlockNumber - gooseStake[tokenID].blockNumber;
+                    stakeDuration = lastCloseBlockNumber - gooseStake[tokenID].blockNumber;
                     poolGooseCounter[i] += 1;
-                    seasonHistory[curSeasonSeq].totalGooseStakeDurationPerPond[i] += iDuration;
-
+                    seasonHistory[curSeasonSeq].totalGooseStakeDurationPerPond[i] += stakeDuration;
                 }
 
             }
@@ -230,12 +231,11 @@ contract Barn is IBarn, Ownable,  Pausable {
 
             for( uint j = 0; j < poolCroco[Pool(i)].length(); j++ ) {
                 uint16 tokenID = uint16(poolCroco[Pool(i)].at(j));
-                uint32 _seasonSeq = getSeasonID(crocoStake[tokenID].blockNumber);
-                if( _seasonSeq < curSeasonSeq ){
+                if( crocoStake[tokenID].blockNumber < lastOpenBlockNumber ){
                     poolVoteCounter[uint8(Pool.Barn)] += 1;
                 }else{
                     poolVoteCounter[i] += 1;
-                    seasonHistory[curSeasonSeq].totalCrocoVoteDuration += lastCloseBlockNumber - gooseStake[tokenID].blockNumber;
+                    seasonHistory[curSeasonSeq].totalCrocoVoteDuration += lastCloseBlockNumber - crocoStake[tokenID].blockNumber;
                 }
             }
         }
@@ -327,11 +327,11 @@ contract Barn is IBarn, Ownable,  Pausable {
                     Pool pool = gooseStake[tokenIds[i]].pool;
                     uint256 pond_rewards;
                     uint256 rank = getRank(pool, seasonHistory[j].pondWinners);
-                    uint32 iDuration = ( seasonHistory[j].blockNumber - genisisBlockNumber ) % (SEASON_DURATION + SEASON_REST);
-                    uint32 previousOpenBlock = seasonHistory[j].blockNumber - iDuration; // previous
+                    uint32 stakeDuration = seasonHistory[j].closeBlockNumber - seasonHistory[j].openBlockNumber;
+                    //uint32 previousOpenBlock = seasonHistory[j].blockNumber - stakeDuration; // previous
 
                     // bug found(fixed): for those Goose whose Pond is in Top 3 rank, but are overdued in this Season.
-                    if( rank == 0 || gooseStake[tokenIds[i]].blockNumber < previousOpenBlock ) {
+                    if( rank == 0 || gooseStake[tokenIds[i]].blockNumber < seasonHistory[j].openBlockNumber ) {
                         // pond_rewards = GEGG_DAILY_LIMIT * 0.3 * 1 / 7; 7 is sum of 6 Ponds and 1 Barn.
                         pond_rewards = GEGG_DAILY_LIMIT * 3 / 10 / 7;   // todo: need to float type
                         
@@ -346,22 +346,22 @@ contract Barn is IBarn, Ownable,  Pausable {
                         //pond_rewards = 0;
                     }
 
-                    if( gooseStake[tokenIds[i]].blockNumber < previousOpenBlock ){
-                        //iDuration = ( seasonHistory[j].blockNumber - genisisBlockNumber ) % (SEASON_DURATION + SEASON_REST);
-                        gooseStake[tokenIds[i]].unclaimedBalance += pond_rewards * iDuration / seasonHistory[j].totalGooseStakeDurationPerPond[uint(Pool.Barn)];
+                    if( gooseStake[tokenIds[i]].blockNumber < seasonHistory[j].openBlockNumber ){
+                        //stakeDuration = ( seasonHistory[j].blockNumber - genisisBlockNumber ) % (SEASON_DURATION + SEASON_REST);
+                        gooseStake[tokenIds[i]].unclaimedBalance += pond_rewards * stakeDuration / seasonHistory[j].totalGooseStakeDurationPerPond[uint(Pool.Barn)];
 
                     }else{
-                        require( seasonHistory[j].blockNumber > gooseStake[tokenIds[i]].blockNumber, "Your NFT have't participated in the Season" );
-                        iDuration = seasonHistory[j].blockNumber - gooseStake[tokenIds[i]].blockNumber;
-                        gooseStake[tokenIds[i]].unclaimedBalance += pond_rewards * iDuration / seasonHistory[j].totalGooseStakeDurationPerPond[uint(pool)];
+                        require( seasonHistory[j].closeBlockNumber > gooseStake[tokenIds[i]].blockNumber, "Your NFT have't participated in the Season" );
+                        stakeDuration = seasonHistory[j].closeBlockNumber - gooseStake[tokenIds[i]].blockNumber;
+                        gooseStake[tokenIds[i]].unclaimedBalance += pond_rewards * stakeDuration / seasonHistory[j].totalGooseStakeDurationPerPond[uint(pool)];
 
                     }
                     
-                    totalDuration += iDuration;
+                    totalDuration += stakeDuration;
                     console.log("pool No.     = ", uint(pool));
                     console.log("pool rank    = ", rank);
                     console.log("pond_rewards = ", pond_rewards);
-                    console.log("iDuration    = ", iDuration);
+                    console.log("stakeDuration    = ", stakeDuration);
 
                 }
             }
