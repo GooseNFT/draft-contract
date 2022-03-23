@@ -17,8 +17,8 @@ contract Barn is IBarn, Ownable,  Pausable {
 
     //uint constant multiplier = 10**18;
     uint constant multiplier = 1;
-    uint16 public constant SEASON_DURATION  =  115;
-    uint16 public constant SEASON_REST  =  20;
+    uint16 public  SEASON_DURATION  =  115;
+    uint16 public  SEASON_REST  =  20;
     uint public constant GEGG_DAILY_LIMIT = 1000000 * multiplier;
 
 
@@ -80,10 +80,11 @@ contract Barn is IBarn, Ownable,  Pausable {
     CrocoDao croco;
     GEGG egg;
 
-    constructor( address _gegg, address _croco ){
+    constructor( address _gegg, address _croco, uint16 duration, uint16 rest ){
         egg = GEGG(_gegg);
-
         croco = CrocoDao(_croco);
+        SEASON_DURATION = duration;
+        SEASON_REST = rest;
     }
 
     function getGooseSetNum( Pool _pool ) public view returns (uint) {

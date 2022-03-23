@@ -7,6 +7,11 @@ const { waitForDebugger } = require("inspector");
 
 const { BigNumber, BigNumberish } = require( "@ethersproject/bignumber");
 
+function sleep(ms) {
+    return new Promise((resolve) => {
+        setTimeout(resolve, ms);
+    });
+}
 
 describe( "GooseNFT Contracts Test", function(){
     let Traits;
@@ -45,7 +50,7 @@ describe( "GooseNFT Contracts Test", function(){
         croco = await CrocoDao.deploy(egg.address, 888);
 
 
-        barn  = await Barn.deploy(egg.address, croco.address);
+        barn  = await Barn.deploy(egg.address, croco.address, 115, 20);
 
         
         //eggaddress = await egg.address;
@@ -117,7 +122,7 @@ describe( "GooseNFT Contracts Test", function(){
 
     });
 
-    /*
+    
 
     describe( "Deployment", function(){
         it("Should set the right owner", async function(){
@@ -173,27 +178,35 @@ describe( "GooseNFT Contracts Test", function(){
             
         })
         
-        it( "Case 3: seasonClose with empty players", async function(){
+        it( "Case 3: Continuous season operations with empty players", async function(){
+            barn = await Barn.deploy(egg.address, croco.address, 6, 5)
             await barn.seasonOpen();
-            await new Promise(resolve => setTimeout(resolve, 5000));
+            await sleep(4000);
+            await expect( barn.seasonClose()).to.be.revertedWith("Error: VM Exception while processing transaction: reverted with reason string 'Season close time isn't arrived'");
+            await sleep(3000);
             await barn.seasonClose();
-            const r = await barn.seasonHistory(1);
+            await expect(barn.seasonClose()).to.be.revertedWith("Error: VM Exception while processing transaction: reverted with reason string 'Season is already Closed'");
+            const r = await barn.seasonHistory(0);
             //console.log(r);
             const r2 = await barn.getRank(2, r['pondWinners']);
             const r3 = await barn.getRank(9, r['pondWinners']);
             //console.log(r2)
+            // 291 means Pond 1, 2, 3 ranks as No.1, No.2 No.3.
             expect(r['pondWinners']).to.be.equal(291);
             expect(r2).to.be.equal(2);
             expect(r3).to.be.equal(0);
+            await expect(barn.seasonOpen()).to.be.revertedWith("Error: VM Exception while processing transaction: reverted with reason string 'Season is resting'")
+            await sleep(5000);
+            await barn.seasonOpen();
+            await expect( barn.seasonClose()).to.be.revertedWith("Error: VM Exception while processing transaction: reverted with reason string 'Season close time isn't arrived'");
             //expect(barn.seasonHistory(0))
-            //await expect(barn.seasonClose()).to.be.revertedWith("Error: VM Exception while processing transaction: reverted with reason string 'Season is already Closed'");
+            //
             
         })
 
-
     });
 
- 
+
 
     describe( "Geting deploy gas used estimate.",  function(){
         it( "Cas 1: show gas used of deploying contracts", async function(){
@@ -212,7 +225,7 @@ describe( "GooseNFT Contracts Test", function(){
             croco = await CrocoDao.deploy(egg.address, 888);
     
     
-            barn  = await Barn.deploy(egg.address, croco.address);
+            barn  = await Barn.deploy(egg.address, croco.address, 100,10);
     
             
             //eggaddress = await egg.address;
@@ -222,7 +235,7 @@ describe( "GooseNFT Contracts Test", function(){
             const barn_r = await barn.deployTransaction.wait();
             const goose_r = await goose.deployTransaction.wait();
     
-            console.log("Gas info: ", 
+            console.log("Contract Deployment Gas info: ", 
             ethers.utils.formatUnits(egg_r.gasUsed * gas_price, "gwei"), 
             ethers.utils.formatUnits(barn_r.gasUsed * gas_price, "gwei"), 
             ethers.utils.formatUnits(goose_r.gasUsed * gas_price, "gwei"));
@@ -296,7 +309,7 @@ describe( "GooseNFT Contracts Test", function(){
         });
     });
 
-
+ /*
 
     describe( "Staking Games", function(){
         it( "Case 1: Goose Stake", async function(){
@@ -387,20 +400,6 @@ describe( "GooseNFT Contracts Test", function(){
         });
     });
 */
-
-    function getnum(blockNumber){
-        console.log("Current blockNumber: ", blockNumber);
-        //const n = await ethers.provider.getBlockNumber();
-        //console.log("Real block number: ", n);
-        return ;
-    }
-
-    
-    function sleep(ms) {
-        return new Promise((resolve) => {
-            setTimeout(resolve, ms);
-        });
-    }
 
     async function calculateRewards(){
         var rewardSum = BigNumber.from(0);
