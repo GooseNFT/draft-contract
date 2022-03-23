@@ -122,7 +122,7 @@ describe( "GooseNFT Contracts Test", function(){
 
     });
 
-    
+     /*
 
     describe( "Deployment", function(){
         it("Should set the right owner", async function(){
@@ -309,7 +309,7 @@ describe( "GooseNFT Contracts Test", function(){
         });
     });
 
- /*
+
 
     describe( "Staking Games", function(){
         it( "Case 1: Goose Stake", async function(){
@@ -419,7 +419,7 @@ describe( "GooseNFT Contracts Test", function(){
     }
 
     describe( "Staking Games Ver. 2", function(){
-        it(" Case 1: ", async function() {
+        it(" Case 1: Stake 97 users' Goose NFT and check rewards", async function() {
             const SEASON_DURATION = await barn.SEASON_DURATION();
             const SEASON_REST     = await barn.SEASON_REST();
             console.log("SEASON_DURATION: ", SEASON_DURATION, " SEASON_REST", SEASON_REST);
@@ -459,9 +459,6 @@ describe( "GooseNFT Contracts Test", function(){
             }
             var fs = require('fs');
             console.log("User Amount:", users.length);
-
-
-
             
             await (await barn.seasonOpen()).wait();
             genisisBlock = await barn.genisisBlockNumber();
