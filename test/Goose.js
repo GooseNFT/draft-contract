@@ -7,6 +7,11 @@ const { waitForDebugger } = require("inspector");
 
 const { BigNumber, BigNumberish } = require( "@ethersproject/bignumber");
 
+function sleep(ms) {
+    return new Promise((resolve) => {
+        setTimeout(resolve, ms);
+    });
+}
 
 describe( "GooseNFT Contracts Test", function(){
     let Traits;
@@ -24,9 +29,11 @@ describe( "GooseNFT Contracts Test", function(){
     let user2;
     let users;
     let owner_address;
+    let nUsers
   
 
     this.beforeEach( async function(){
+        this.timeout(100000);
         //Traits = await ethers.getContractFactory("Traits");
         Goose    = await ethers.getContractFactory("Goose");
         CrocoDao = await ethers.getContractFactory("CrocoDao");
@@ -34,7 +41,7 @@ describe( "GooseNFT Contracts Test", function(){
         Barn     = await ethers.getContractFactory("Barn");
         [owner, user1, user2, ...users] = await ethers.getSigners();
         owner_address = await owner.getAddress();
-
+        nUsers  = users.length;
         //traits = await Traits.deploy();
 
         egg   = await GEgg.deploy();
@@ -43,7 +50,7 @@ describe( "GooseNFT Contracts Test", function(){
         croco = await CrocoDao.deploy(egg.address, 888);
 
 
-        barn  = await Barn.deploy(egg.address, croco.address);
+        barn  = await Barn.deploy(egg.address, croco.address, 115, 20);
 
         
         //eggaddress = await egg.address;
@@ -115,7 +122,7 @@ describe( "GooseNFT Contracts Test", function(){
 
     });
 
-    
+
 
     describe( "Deployment", function(){
         it("Should set the right owner", async function(){
@@ -170,28 +177,36 @@ describe( "GooseNFT Contracts Test", function(){
             await expect(barn.seasonClose()).to.be.revertedWith("Error: VM Exception while processing transaction: reverted with reason string 'Season is already Closed'");
             
         })
-        /*
-        it( "Case 3: seasonClose with empty players", async function(){
+        
+        it( "Case 3: Continuous season operations with empty players", async function(){
+            barn = await Barn.deploy(egg.address, croco.address, 6, 5)
             await barn.seasonOpen();
-            await new Promise(resolve => setTimeout(resolve, 5000));
+            await sleep(4000);
+            await expect( barn.seasonClose()).to.be.revertedWith("Error: VM Exception while processing transaction: reverted with reason string 'Season close time isn't arrived'");
+            await sleep(3000);
             await barn.seasonClose();
-            const r = await barn.seasonHistory(1);
+            await expect(barn.seasonClose()).to.be.revertedWith("Error: VM Exception while processing transaction: reverted with reason string 'Season is already Closed'");
+            const r = await barn.seasonHistory(0);
             //console.log(r);
             const r2 = await barn.getRank(2, r['pondWinners']);
             const r3 = await barn.getRank(9, r['pondWinners']);
             //console.log(r2)
+            // 291 means Pond 1, 2, 3 ranks as No.1, No.2 No.3.
             expect(r['pondWinners']).to.be.equal(291);
             expect(r2).to.be.equal(2);
             expect(r3).to.be.equal(0);
+            await expect(barn.seasonOpen()).to.be.revertedWith("Error: VM Exception while processing transaction: reverted with reason string 'Season is resting'")
+            await sleep(5000);
+            await barn.seasonOpen();
+            await expect( barn.seasonClose()).to.be.revertedWith("Error: VM Exception while processing transaction: reverted with reason string 'Season close time isn't arrived'");
             //expect(barn.seasonHistory(0))
-            //await expect(barn.seasonClose()).to.be.revertedWith("Error: VM Exception while processing transaction: reverted with reason string 'Season is already Closed'");
+            //
             
-        })*/
-
+        })
 
     });
 
- 
+
 
     describe( "Geting deploy gas used estimate.",  function(){
         it( "Cas 1: show gas used of deploying contracts", async function(){
@@ -210,7 +225,7 @@ describe( "GooseNFT Contracts Test", function(){
             croco = await CrocoDao.deploy(egg.address, 888);
     
     
-            barn  = await Barn.deploy(egg.address, croco.address);
+            barn  = await Barn.deploy(egg.address, croco.address, 100,10);
     
             
             //eggaddress = await egg.address;
@@ -220,7 +235,7 @@ describe( "GooseNFT Contracts Test", function(){
             const barn_r = await barn.deployTransaction.wait();
             const goose_r = await goose.deployTransaction.wait();
     
-            console.log("Gas info: ", 
+            console.log("Contract Deployment Gas info: ", 
             ethers.utils.formatUnits(egg_r.gasUsed * gas_price, "gwei"), 
             ethers.utils.formatUnits(barn_r.gasUsed * gas_price, "gwei"), 
             ethers.utils.formatUnits(goose_r.gasUsed * gas_price, "gwei"));
@@ -295,14 +310,13 @@ describe( "GooseNFT Contracts Test", function(){
     });
 
 
-
+     /*
     describe( "Staking Games", function(){
         it( "Case 1: Goose Stake", async function(){
             this.timeout(100000);
 
             const opt_overides = {value: ethers.utils.parseEther("0.08")};
-            const nUsers  = users.length;
-            //const nUsers  = 1;
+            //nUsers  = 1;
             for ( var i = 0; i < nUsers; i++ ){
                 var r1 = await (await  goose.connect(users[i]).mint(1, opt_overides)).wait();
             }
@@ -385,4 +399,110 @@ describe( "GooseNFT Contracts Test", function(){
 
         });
     });
-} )
+*/
+
+    async function calculateRewards(){
+        var rewardSum = BigNumber.from(0);
+        for( var i = 0; i < nUsers; i++ ){
+            var myTokenId = await barn.getUserStakedGooseIds(users[i].address,0);
+            await( await barn.connect(users[i]).gooseClaimToBalance([myTokenId])).wait();
+            const r = await barn.gooseStake(myTokenId);
+            //console.log(r);
+            rewardSum = rewardSum.add(r['unclaimedBalance']);
+            console.log("Token #", myTokenId.toString(), " claimed:", r['unclaimedBalance'].toString());
+        }
+        console.log("rewardsSum  = ", rewardSum);
+        const reward = Math.floor(rewardSum.toNumber() / 100);
+        return Promise.resolve(reward);
+        //expect( reward).to.be.equal(9999);
+        //close_flag = 0;
+    }
+
+    describe( "Staking Games Ver. 2", function(){
+        it(" Case 1: Stake 97 users' Goose NFT and check rewards", async function() {
+            const SEASON_DURATION = await barn.SEASON_DURATION();
+            const SEASON_REST     = await barn.SEASON_REST();
+            console.log("SEASON_DURATION: ", SEASON_DURATION, " SEASON_REST", SEASON_REST);
+            var   genisisBlock    = 0;
+            this.timeout(1000000);
+            var close_flag;
+            var closed = false;
+            var afterStakeBlock = Number.MAX_SAFE_INTEGER;
+
+            var checkresult = 0;
+
+            ethers.provider.on("block", blockNumber =>{
+                //console.log("Current blockNumber: ", blockNumber, " genisisBlock: ", genisisBlock);
+                if( blockNumber > afterStakeBlock && genisisBlock != 0 && !closed ){
+                    if ( blockNumber - genisisBlock > SEASON_DURATION ){
+                        console.log("kick, off event block");
+                        closed = true;
+                        ethers.provider.off("block");
+                        barn.seasonClose().then(tx=>{
+                            console.log("seasonClose summited at block: ", tx.blockNumber);
+                            return tx.wait();
+                        }).then( receipt => {
+                            console.log("get receipt: ", receipt.blockNumber);
+                            console.log("tx status: ", receipt.status);
+                            calculateRewards().then(a=>checkresult=a);
+                        });
+                        
+                    }
+                }
+            });
+
+            const opt_overides = {value: ethers.utils.parseEther("0.08")};
+            
+
+            for ( var i = 0; i < nUsers; i++ ){
+                var r1 = await (await  (goose.connect(users[i]).mint(1, opt_overides) ) ).wait();
+            }
+            var fs = require('fs');
+            console.log("User Amount:", users.length);
+            
+            await (await barn.seasonOpen()).wait();
+            genisisBlock = await barn.genisisBlockNumber();
+            console.log(nUsers, "barn.seasonOpen at : ", genisisBlock)
+            var randomInt = 0;
+            for( var i = 0; i < nUsers; i++ ){
+                randomInt = Math.floor(Math.random() * (Number.MAX_SAFE_INTEGER - 101 ) );
+                var myTokenId = await goose.tokenOfOwnerByIndex(users[i].address,0)
+                //if( i != 10 ) randomInt = 0;
+                await goose.connect(users[i]).stakeGoose2Pool( randomInt % 10, [myTokenId] );
+            }
+
+            afterStakeBlock = await ethers.provider.getBlockNumber();
+            console.log(nUsers, " users have finished staking at ", afterStakeBlock);
+            
+            while ( checkresult == 0 ){
+                //console.log("wait ")
+                await sleep(1000);
+            }
+            const s0 = await barn.seasonHistory(0);
+            var ranks = new Array(3);
+            for( var i = 0; i < 10; i++ ){
+                const count = await barn.getGooseSetNum(i);
+                const rank = await barn.getRank(i, s0['pondWinners']);
+                if (rank != 0 ){
+                    ranks[rank-1] = i;
+                }
+                console.log("Pool #", i, " = ", count);
+            }
+            console.log("ranks: ", ranks);
+            var checkNumber;
+            ranks.forEach((v,i)=>{
+                checkNumber |= v;
+                if ( i < 2 ){
+                    checkNumber <<= 4;
+                }
+            })
+            expect(checkNumber).to.be.equal(s0['pondWinners']);
+            expect( checkresult ).to.be.equal(9999);
+
+        });
+        
+    });
+
+
+} );
+

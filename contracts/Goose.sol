@@ -71,9 +71,9 @@ contract Goose is IBarn, IGoose, Traits, ERC721Enumerable, Pausable {
 
     /** 
     * the first 20% are paid in ETH
-    * the next 20% are 20000 $WOOL
-    * the next 40% are 40000 $WOOL
-    * the final 20% are 80000 $WOOL
+    * the next 20% are 20000 $GEGG
+    * the next 40% are 40000 $GEGG
+    * the final 20% are 80000 $GEGG
     * @param tokenId the ID to check the cost of to mint
     * @return the cost of the given token ID
     */
