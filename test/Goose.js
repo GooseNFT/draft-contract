@@ -122,7 +122,7 @@ describe( "GooseNFT Contracts Test", function(){
 
     });
 
-     /*
+
 
     describe( "Deployment", function(){
         it("Should set the right owner", async function(){
@@ -310,7 +310,7 @@ describe( "GooseNFT Contracts Test", function(){
     });
 
 
-
+     /*
     describe( "Staking Games", function(){
         it( "Case 1: Goose Stake", async function(){
             this.timeout(100000);
