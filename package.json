@@ -4,7 +4,8 @@
   "description": "this is my first Solidity packet",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "chain": "hardhat node",
+    "test": "npx hardhat test test/Goose.js --network localhost"
   },
   "author": "",
   "license": "ISC",
@@ -14,6 +15,7 @@
     "chai": "^4.3.4",
     "ethereum-waffle": "^3.4.0",
     "ethers": "^5.5.4",
-    "hardhat": "^2.8.0"
+    "hardhat": "^2.8.0",
+    "prettier-plugin-solidity": "1.0.0-beta.19"
   }
 }

@@ -12,9 +12,9 @@ contract GEGG is ERC20, Ownable {
   constructor() ERC20("GEGG", "GEGG") { }
 
   /**
-   * mints $WOOL to a recipient
-   * @param to the recipient of the $WOOL
-   * @param amount the amount of $WOOL to mint
+   * mints $GEGG to a recipient
+   * @param to the recipient of the $GEGG
+   * @param amount the amount of $GEGG to mint
    */
   function mint(address to, uint256 amount) external {
     require(controllers[msg.sender], "Only controllers can mint");
@@ -22,9 +22,9 @@ contract GEGG is ERC20, Ownable {
   }
 
   /**
-   * burns $WOOL from a holder
-   * @param from the holder of the $WOOL
-   * @param amount the amount of $WOOL to burn
+   * burns $GEGG from a holder
+   * @param from the holder of the $GEGG
+   * @param amount the amount of $GEGG to burn
    */
   function burn(address from, uint256 amount) external {
     require(controllers[msg.sender], "Only controllers can burn");

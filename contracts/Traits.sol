@@ -6,7 +6,7 @@ import "./Ownable.sol";
 import "hardhat/console.sol";
 
 
-abstract contract Traits is  Ownable{
+abstract contract Traits is Ownable{
 
     struct Trait {
         string name;

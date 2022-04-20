@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 interface ICrocoDao {
 
   // struct to store each token's traits
-  struct Croco {
+  struct CrocoTraits {
     uint8 body;
     uint8 eye;
     uint8 legs;

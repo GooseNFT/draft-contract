@@ -22,7 +22,7 @@ contract CrocoDao is ICrocoDao, Traits, ERC721Enumerable, Pausable {
 
 
     // mapping from tokenId to a struct containing the token's traits
-    mapping(uint256 => Croco ) public tokenTraits;
+    mapping(uint256 => CrocoTraits ) public tokenTraits;
 
     // mapping from hashed(tokenTrait) to the tokenId it's associated with
     // used to ensure there are no duplicates
@@ -78,7 +78,7 @@ contract CrocoDao is ICrocoDao, Traits, ERC721Enumerable, Pausable {
     * @param seed a pseudorandom 256 bit number to derive traits from
     * @return c - a struct of traits for the given token ID
     */
-    function generate(uint256 tokenId, uint256 seed) internal returns (Croco memory c) {
+    function generate(uint256 tokenId, uint256 seed) internal returns (CrocoTraits memory c) {
         c = selectTraits(seed);
         if (existingCombinations[structToHash(c)] == 0) {
             tokenTraits[tokenId] = c;
@@ -93,7 +93,7 @@ contract CrocoDao is ICrocoDao, Traits, ERC721Enumerable, Pausable {
     * @param seed a pseudorandom 256 bit number to derive traits from
     * @return t -  a struct of randomly selected traits
     */
-    function selectTraits(uint256 seed) internal view returns (Croco memory t) {    
+    function selectTraits(uint256 seed) internal view returns (CrocoTraits memory t) {    
         seed >>= 16;
         t.body = selectTrait(uint16(seed & 0xFFFF), 0 );
         seed >>= 16;
@@ -119,7 +119,7 @@ contract CrocoDao is ICrocoDao, Traits, ERC721Enumerable, Pausable {
     * @param s the struct to pack into a hash
     * @return the 256 bit hash of the struct
     */
-    function structToHash(Croco memory s) internal pure returns (uint256) {
+    function structToHash(CrocoTraits memory s) internal pure returns (uint256) {
         return uint256(bytes32(
         abi.encodePacked(
             s.body,

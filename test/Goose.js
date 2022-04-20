@@ -2,7 +2,7 @@
 
 // We import Chai to use its asserting functions here.
 const { expect } = require("chai");
-const  {ethers}  = require("hardhat");
+const { ethers }  = require("hardhat");
 const { waitForDebugger } = require("inspector");
 
 const { BigNumber, BigNumberish } = require( "@ethersproject/bignumber");

@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 interface IGoose {
 
   // struct to store each token's traits
-  struct Goose {
+  struct GooseTraits {
     uint8 body;
     uint8 eye;
     uint8 hat;
