@@ -13,20 +13,20 @@ import "./GEGG.sol";
 contract Goose is IBarn, IGoose, Traits, ERC721Enumerable, Pausable {
     // mint price
     uint256 public constant MINT_PRICE = .08 ether;
-    // max number of tokens that can be minted - 50000 in production
-    uint256 public immutable MAX_TOKENS;
-    // number of tokens that can be claimed for free - 20% of MAX_TOKENS
-    uint256 public PAID_TOKENS;
-    // number of tokens have been minted so far
+    // max number of Goose that can be minted - 50000 in production
+    uint256 public immutable MAX_GOOSES;
 
+    // number of Goose that can be bought with ETH - 20% of MAX_GOOSE
+    uint256 public MAX_PAID_GOOSES;
     uint8   public constant AMOUNT_PER_ACCOUNT = 5;
-    uint16  public minted;
 
+    // number of Goose have been minted so far
+    uint16  public mintedGoose;
 
-    // mapping from tokenId to a struct containing the token's traits
-    mapping(uint256 => Goose) public tokenTraits;
+    // mapping from gooseId to a struct containing the goose's traits
+    mapping(uint256 => GooseTraits) public gooseIdToGooseTraits;
 
-    // mapping from hashed(tokenTrait) to the tokenId it's associated with
+    // mapping from hashed(gooseTrait) to the gooseId it's associated with
     // used to ensure there are no duplicates
     mapping(uint256 => uint256) public existingCombinations;
 
@@ -37,31 +37,31 @@ contract Goose is IBarn, IGoose, Traits, ERC721Enumerable, Pausable {
     GEGG public egg;
 
 
-    constructor(address _gegg, address _barn, uint256 _maxTokens) ERC721("GooseEgg Game", "GGAME") { 
+    constructor(address _gegg, address _barn, uint256 _maxGooses) ERC721("Goose", "GOOSE") { 
         egg = GEGG(_gegg);
         barn = Barn(_barn);
-        MAX_TOKENS = _maxTokens;
-        PAID_TOKENS = MAX_TOKENS / 5;
+        MAX_GOOSES = _maxGooses;
+        MAX_PAID_GOOSES = MAX_GOOSES / 5;
     }
 
     function mint( uint8 amount ) external payable whenNotPaused{
         require( tx.origin == _msgSender(), "Only EOA Allowed");
-        require( minted + amount <= MAX_TOKENS, "All tokens minted");
-        require(amount > 0 && amount <= AMOUNT_PER_ACCOUNT, "Invalid mint amount");
-        if (minted < PAID_TOKENS) {
-            require(minted + amount <= PAID_TOKENS, "All tokens on-sale already sold");
+        require( mintedGoose + amount <= MAX_GOOSES, "All gooses minted");
+        require( amount > 0 && amount <= AMOUNT_PER_ACCOUNT, "Invalid mint amount");
+        if (mintedGoose < MAX_PAID_GOOSES) {
+            require(mintedGoose + amount <= MAX_PAID_GOOSES, "All gooses on-sale already sold");
             require(amount * MINT_PRICE == msg.value, "Invalid payment amount");
         } else {
             require(msg.value == 0);
         }
         uint256 totalEggCost = 0;
         uint256 seed;
-        for( uint8 i = 0; i < amount; i++ ){
-            minted++;
-            seed = random(minted);
-            generate(minted, seed);
-            _safeMint( _msgSender(), minted);
-            totalEggCost += mintCost(minted);
+        for ( uint8 i = 0; i < amount; i++ ){
+            mintedGoose++;
+            seed = random(mintedGoose);
+            generate(mintedGoose, seed);
+            _safeMint( _msgSender(), mintedGoose);
+            totalEggCost += mintCost(mintedGoose);
         }
         if( totalEggCost > 0 ) {
             egg.burn(_msgSender(), totalEggCost);
@@ -74,14 +74,14 @@ contract Goose is IBarn, IGoose, Traits, ERC721Enumerable, Pausable {
     * the next 20% are 20000 $GEGG
     * the next 40% are 40000 $GEGG
     * the final 20% are 80000 $GEGG
-    * @param tokenId the ID to check the cost of to mint
+    * @param gooseId the ID to check the cost of to mint
     * @return the cost of the given token ID
     */
-    function mintCost(uint256 tokenId) public view returns (uint256) {
-        if (tokenId <= PAID_TOKENS) return 0;
-        if (tokenId <= MAX_TOKENS * 2 / 5) return 20000 ether;
-        if (tokenId <= MAX_TOKENS * 4 / 5) return 40000 ether;
-        return 80000 ether;
+    function mintCost(uint256 gooseId) public view returns (uint256) {
+        if (gooseId <= MAX_PAID_GOOSES) return 0;
+        if (gooseId <= MAX_GOOSES * 2 / 5) return 20000 ether; // GEGG
+        if (gooseId <= MAX_GOOSES * 4 / 5) return 40000 ether; // GEGG
+        return 80000 ether; // GEGG
     }
 
 
@@ -101,18 +101,18 @@ contract Goose is IBarn, IGoose, Traits, ERC721Enumerable, Pausable {
 
     /**
     * generates traits for a specific token, checking to make sure it's unique
-    * @param tokenId the id of the token to generate traits for
+    * @param gooseId the id of the Goose to generate traits for
     * @param seed a pseudorandom 256 bit number to derive traits from
     * @return g - a struct of traits for the given token ID
     */
-    function generate(uint256 tokenId, uint256 seed) internal returns (Goose memory g) {
+    function generate(uint256 gooseId, uint256 seed) internal returns (GooseTraits memory g) {
         g = selectTraits(seed);
-        if (existingCombinations[structToHash(g)] == 0) {
-            tokenTraits[tokenId] = g;
-            existingCombinations[structToHash(g)] = tokenId;
+        if (existingCombinations[traitsStructToHash(g)] == 0) {
+            gooseIdToGooseTraits[gooseId] = g;
+            existingCombinations[traitsStructToHash(g)] = gooseId;
             return g;
         }
-        return generate(tokenId, random(seed));
+        return generate(gooseId, random(seed));
     }
 
     /**
@@ -120,7 +120,7 @@ contract Goose is IBarn, IGoose, Traits, ERC721Enumerable, Pausable {
     * @param seed a pseudorandom 256 bit number to derive traits from
     * @return t -  a struct of randomly selected traits
     */
-    function selectTraits(uint256 seed) internal view returns (Goose memory t) {    
+    function selectTraits(uint256 seed) internal view returns (GooseTraits memory t) {    
         seed >>= 16;
         t.body = selectTrait(uint16(seed & 0xFFFF), 0 );
         seed >>= 16;
@@ -155,11 +155,11 @@ contract Goose is IBarn, IGoose, Traits, ERC721Enumerable, Pausable {
     }
 
     /**
-    * converts a struct to a 256 bit hash to check for uniqueness
+    * converts goose traits struct to a 256 bit hash to check for uniqueness
     * @param s the struct to pack into a hash
     * @return the 256 bit hash of the struct
     */
-    function structToHash(Goose memory s) internal pure returns (uint256) {
+    function traitsStructToHash(GooseTraits memory s) internal pure returns (uint256) {
         return uint256(bytes32(
         abi.encodePacked(
             s.body,
@@ -179,17 +179,17 @@ contract Goose is IBarn, IGoose, Traits, ERC721Enumerable, Pausable {
         uint256,
         bytes calldata
     ) external pure  returns (bytes4) {
-        require(from == address(0x0), "Cannot send tokens to Barn directly");
+        require(from == address(0x0), "Cannot send Goose to Barn directly");
         return IERC721Receiver.onERC721Received.selector;
     }
 
 
-    function getTokenTraits(uint256 tokenId) public view returns (Goose memory) {
-    return tokenTraits[tokenId];
+    function getGooseTraits(uint256 gooseId) public view returns (GooseTraits memory) {
+    return gooseIdToGooseTraits[gooseId];
   }
 
-    function drawSVG(uint256 tokenId) public view returns (string memory) {
-    Goose memory s = getTokenTraits(tokenId);
+    function drawSVG(uint256 gooseId) public view returns (string memory) {
+    GooseTraits memory s = getGooseTraits(gooseId);
     string memory svgString = string(abi.encodePacked(
       drawTrait(traitData[0][s.body]),
       drawTrait(traitData[1][s.eye]),
@@ -234,7 +234,7 @@ function tokenURI(uint256 tokenId) public view override returns (string memory) 
 
     string memory metadata = string(abi.encodePacked(
       '{"name":  "Goose #"',toString(tokenId),',', 
-      '"description": "Goose Wonder Land", "image": "data:image/svg+xml;base64,',
+      '"description": "Golden Egg World", "image": "data:image/svg+xml;base64,',
       base64(bytes(drawSVG(tokenId))),
       '", "attributes":',
       compileAttributes(tokenId),
@@ -257,20 +257,20 @@ function tokenURI(uint256 tokenId) public view override returns (string memory) 
     ));
   }
 
-  function getGeneration( uint tokenId ) internal view returns (uint){
-        if (tokenId <= PAID_TOKENS) return 0;
-        if (tokenId <= MAX_TOKENS * 2 / 5) return 1;
-        if (tokenId <= MAX_TOKENS * 4 / 5) return 2;
+  function getGeneration( uint gooseId ) internal view returns (uint){
+        if (gooseId <= MAX_PAID_GOOSES) return 0;
+        if (gooseId <= MAX_GOOSES * 2 / 5) return 1;
+        if (gooseId <= MAX_GOOSES * 4 / 5) return 2;
         return 3;
   }
 
   /**
    * generates an array composed of all the individual traits and values
-   * @param tokenId the ID of the token to compose the metadata for
+   * @param gooseID the ID of the token to compose the metadata for
    * @return a JSON array of all of the attributes for given token ID
    */
-  function compileAttributes(uint256 tokenId) public view returns (string memory) {
-    Goose memory s = getTokenTraits(tokenId);
+  function compileAttributes(uint256 gooseID) public view returns (string memory) {
+    GooseTraits memory s = getGooseTraits(gooseID);
     string memory traits;
       traits = string(abi.encodePacked(
         attributeForTypeAndValue(traitTypes[0], traitData[0][s.body].name),',',
@@ -286,7 +286,7 @@ function tokenURI(uint256 tokenId) public view override returns (string memory) 
       '[',
       traits,
       '{"trait_type":"Generation","value":',
-      getGeneration(tokenId),
+      getGeneration(gooseID),
       '}]'
     ));
   }
