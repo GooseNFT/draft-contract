@@ -186,20 +186,20 @@ describe( "GooseNFT Contracts Test", function(){
             await sleep(3000);
             await barn.seasonClose();
             await expect(barn.seasonClose()).to.be.revertedWith("Error: VM Exception while processing transaction: reverted with reason string 'Season is already Closed'");
-            const r = await barn.seasonHistory(0);
+            const r = await barn.seasonsHistory(0);
             //console.log(r);
-            const r2 = await barn.getRank(2, r['pondWinners']);
-            const r3 = await barn.getRank(9, r['pondWinners']);
+            const r2 = await barn.getRank(2, r['topPonds']);
+            const r3 = await barn.getRank(9, r['topPonds']);
             //console.log(r2)
             // 291 means Pond 1, 2, 3 ranks as No.1, No.2 No.3.
-            expect(r['pondWinners']).to.be.equal(291);
+            expect(r['topPonds']).to.be.equal(291);
             expect(r2).to.be.equal(2);
             expect(r3).to.be.equal(0);
             await expect(barn.seasonOpen()).to.be.revertedWith("Error: VM Exception while processing transaction: reverted with reason string 'Season is resting'")
             await sleep(5000);
             await barn.seasonOpen();
             await expect( barn.seasonClose()).to.be.revertedWith("Error: VM Exception while processing transaction: reverted with reason string 'Season close time isn't arrived'");
-            //expect(barn.seasonHistory(0))
+            //expect(barn.seasonsHistory(0))
             //
             
         })
@@ -343,9 +343,9 @@ describe( "GooseNFT Contracts Test", function(){
             const opt_overides2 = {gasLimit: 1562664};
             console.log("seasonClose at          : ", Date.now() - start)
             await barn.seasonClose(opt_overides2);
-            const s0 = await barn.seasonHistory(0);
-            const s1 = await barn.seasonHistory(1);
-            console.log("---------barn.seasonHistory--------")
+            const s0 = await barn.seasonsHistory(0);
+            const s1 = await barn.seasonsHistory(1);
+            console.log("---------barn.seasonsHistory--------")
             console.log(s0,s1);
 
             await expect(goose.tokenOfOwnerByIndex(users[0].address,0)).to.be.revertedWith("ERC721Enumerable: owner index out of bounds");
@@ -478,11 +478,11 @@ describe( "GooseNFT Contracts Test", function(){
                 //console.log("wait ")
                 await sleep(1000);
             }
-            const s0 = await barn.seasonHistory(0);
+            const s0 = await barn.seasonsHistory(0);
             var ranks = new Array(3);
             for( var i = 0; i < 10; i++ ){
                 const count = await barn.getGooseSetNum(i);
-                const rank = await barn.getRank(i, s0['pondWinners']);
+                const rank = await barn.getRank(i, s0['topPonds']);
                 if (rank != 0 ){
                     ranks[rank-1] = i;
                 }
@@ -496,7 +496,7 @@ describe( "GooseNFT Contracts Test", function(){
                     checkNumber <<= 4;
                 }
             })
-            expect(checkNumber).to.be.equal(s0['pondWinners']);
+            expect(checkNumber).to.be.equal(s0['topPonds']);
             expect( checkresult ).to.be.equal(9999);
 
         });
@@ -505,4 +505,3 @@ describe( "GooseNFT Contracts Test", function(){
 
 
 } );
-
