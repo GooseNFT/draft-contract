@@ -14,3 +14,4 @@ output/
 .DS_Store
 package-lock.json
 contracts/Graphs/Overall.dot
+.vscode/settings.json
