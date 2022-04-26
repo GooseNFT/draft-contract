@@ -14,10 +14,10 @@ contract Goose is IBarn, IGoose, Traits, ERC721Enumerable, Pausable {
     // mint price
     uint256 public constant MINT_PRICE = .08 ether;
     // max number of Goose that can be minted - 50000 in production
-    uint256 public immutable MAX_GOOSES;
+    uint256 public immutable MAX_NUMBER_OF_GOOSES;
 
     // number of Goose that can be bought with ETH - 20% of MAX_GOOSE
-    uint256 public MAX_PAID_GOOSES;
+    uint256 public MAX_NUMBER_OF_PAID_GOOSES;
     uint8   public constant AMOUNT_PER_ACCOUNT = 5;
 
     // number of Goose have been minted so far
@@ -40,16 +40,16 @@ contract Goose is IBarn, IGoose, Traits, ERC721Enumerable, Pausable {
     constructor(address _gegg, address _barn, uint256 _maxGooses) ERC721("Goose", "GOOSE") { 
         egg = GEGG(_gegg);
         barn = Barn(_barn);
-        MAX_GOOSES = _maxGooses;
-        MAX_PAID_GOOSES = MAX_GOOSES / 5;
+        MAX_NUMBER_OF_GOOSES = _maxGooses;
+        MAX_NUMBER_OF_PAID_GOOSES = MAX_NUMBER_OF_GOOSES / 5;
     }
 
     function mint( uint8 amount ) external payable whenNotPaused{
         require( tx.origin == _msgSender(), "Only EOA Allowed");
-        require( mintedGoose + amount <= MAX_GOOSES, "All gooses minted");
+        require( mintedGoose + amount <= MAX_NUMBER_OF_GOOSES, "All gooses minted");
         require( amount > 0 && amount <= AMOUNT_PER_ACCOUNT, "Invalid mint amount");
-        if (mintedGoose < MAX_PAID_GOOSES) {
-            require(mintedGoose + amount <= MAX_PAID_GOOSES, "All gooses on-sale already sold");
+        if (mintedGoose < MAX_NUMBER_OF_PAID_GOOSES) {
+            require(mintedGoose + amount <= MAX_NUMBER_OF_PAID_GOOSES, "All gooses on-sale already sold");
             require(amount * MINT_PRICE == msg.value, "Invalid payment amount");
         } else {
             require(msg.value == 0);
@@ -78,9 +78,9 @@ contract Goose is IBarn, IGoose, Traits, ERC721Enumerable, Pausable {
     * @return the cost of the given token ID
     */
     function mintCost(uint256 gooseId) public view returns (uint256) {
-        if (gooseId <= MAX_PAID_GOOSES) return 0;
-        if (gooseId <= MAX_GOOSES * 2 / 5) return 20000 ether; // GEGG
-        if (gooseId <= MAX_GOOSES * 4 / 5) return 40000 ether; // GEGG
+        if (gooseId <= MAX_NUMBER_OF_PAID_GOOSES) return 0;
+        if (gooseId <= MAX_NUMBER_OF_GOOSES * 2 / 5) return 20000 ether; // GEGG
+        if (gooseId <= MAX_NUMBER_OF_GOOSES * 4 / 5) return 40000 ether; // GEGG
         return 80000 ether; // GEGG
     }
 
@@ -258,9 +258,9 @@ function tokenURI(uint256 tokenId) public view override returns (string memory) 
   }
 
   function getGeneration( uint gooseId ) internal view returns (uint){
-        if (gooseId <= MAX_PAID_GOOSES) return 0;
-        if (gooseId <= MAX_GOOSES * 2 / 5) return 1;
-        if (gooseId <= MAX_GOOSES * 4 / 5) return 2;
+        if (gooseId <= MAX_NUMBER_OF_PAID_GOOSES) return 0;
+        if (gooseId <= MAX_NUMBER_OF_GOOSES * 2 / 5) return 1;
+        if (gooseId <= MAX_NUMBER_OF_GOOSES * 4 / 5) return 2;
         return 3;
   }
 
@@ -300,11 +300,11 @@ function tokenURI(uint256 tokenId) public view override returns (string memory) 
 
 
 
-  function stakeGoose2Pool( Pool _pool, uint16[] calldata tokenIds ) external whenNotPaused{
-    barn.stakeGooseConfirm( _msgSender(), _pool, tokenIds);
-    for( uint8 i = 0; i < tokenIds.length; i++ ){
+  function stakeGoose2Pool( Location _location, uint16[] calldata gooseIds ) external whenNotPaused{
+    barn.stakeGooseConfirm( _msgSender(), _location, gooseIds);
+    for( uint8 i = 0; i < gooseIds.length; i++ ){
         // todo: needs check the return to assure security.
-        transferFrom( _msgSender(), address(barn), tokenIds[i] );
+        transferFrom( _msgSender(), address(barn), gooseIds[i] );
     }
   }
 

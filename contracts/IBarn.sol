@@ -3,7 +3,7 @@
 pragma solidity ^0.8.0;
 
 interface IBarn {
-    enum Pool { 
+    enum Location { 
       Barn, 
       Pond1, 
       Pond2, 
@@ -17,10 +17,10 @@ interface IBarn {
     }  
 
 /*
-  function stakeGoose2Pool( Pool _pool, uint16[] calldata tokenIds ) external;
-  function switchGoosePond( Pool _to_pool, uint16[] calldata tokenIds ) external;
-  function stakeCrocoAndVote( Pool _pool, uint16[] calldata tokenIds ) external;
-  function changeCrocoVote( Pool _to_pool, uint16[] calldata tokenIds ) external;
+  function stakeGoose2Pool( Location _pool, uint16[] calldata tokenIds ) external;
+  function switchGoosePond( Location _to_pool, uint16[] calldata tokenIds ) external;
+  function stakeCrocoAndVote( Location _pool, uint16[] calldata tokenIds ) external;
+  function changeCrocoVote( Location _to_pool, uint16[] calldata tokenIds ) external;
   function seasonClose() external;
   function seasonOpen() external;
   function unstakeGoose( uint16[] calldata tokenIds ) external;

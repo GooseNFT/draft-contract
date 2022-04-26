@@ -1,0 +1,51 @@
+If player wants to take an adventure, player can start making a move during Resting period prior to the beginning of Egg-laying Season to avoid high gas fee <<<
+
+//
+
+CrocoDAO in the FLOAT but did not make a vote shall be distributed 5% each
+
+//
+
+After each Egg-laying Season, CrocoDAO will be automatically returned to FLOAT as default
+
+//
+
+	•	Player can move the GOOSE among different PONDs only 1 time
+	•	Player can upgrade GOOSE’s level to be able to move more than 1 time by staking $GEGG as followed:
+	•	Level 1: No $GEGG staked, can move only 1 time
+	•	Level 2: 300 $GEGG staked, can move 2 times
+	•	Level 3: 500 $GEGG staked, can move 3 times
+	•	Level 4: 800 $GEGG staked, can move 4 times
+	•	Level 5: 1300 $GEGG staked, can move 5 times
+	•	Level 6: 2100 $GEGG staked, can move 6 times
+	•	Level 7: 3400 $GEGG staked, can move 7 times
+	•	Level 8: 5500 $GEGG staked, can move 8 times
+	•	
+
+- 
+- IF there are PONDs with same amount of GOOSE, POND that has more of GOOSE’s block-duration wins (Sum of each GOOSE’s block-duration since entering the POND)
+
+//
+
+- The earlier the GOOSE stays in the POND, the more Golden Egg ($GEGG) it lays. Calculation logic is as followed:
+- GOOSE’s block-duration determined by range then convert into point as shown below
+- 1-1000 = 1 point,
+- 1001-2000 = 2 points,
+- 2001-3000 = 3 points,
+- 3001-4000 = 4 points,
+- 4001-5000 = 5 points,
+- 5001-6000 = 6 points,
+- 6001-7000 = 7 points,
+- 7001-8000 = 8 points
+- Then levelizing score to make less reward gap become 33% different by adding (20) [--adjustable by admin] points to every GOOSE for example GOOSE_0021 = 3 points after levelized it becomes 3+20 = 23 points
+- Each GOOSE $GEGG reward = POND reward / sum of levelized score * levelized score of each GOOSE
+
+//
+
+CrocoDAO in the FLOAT but did not make a vote shall receive only 10 $GEGG each?
+
+//
+
+For the moves acquired from Leveling up, moves can be applied as a whole to all the GOOSE in the wallet. For example, if you have 4 GOOSE in your wallet and you stake 500$GEGG, then you will have 3 more moves (Level3) for those 4 GOOSE. Let say, each GOOSE already move 1 time, then there are only 3 more moves available that you have to choose which GOOSE can make the move.
+
+//
