@@ -34,11 +34,11 @@ contract CrocoDao is ICrocoDao, Traits, ERC721Enumerable, Pausable {
     IBarn public barn;
 
     // reference to $GEGG for burning on mint
-    GEGG public egg;
+    GEGG public gegg;
 
 
     constructor(address _gegg, uint256 _maxTokens) ERC721("GooseEgg Game", "GGAME") { 
-        egg = GEGG(_gegg);
+        gegg = GEGG(_gegg);
         MAX_TOKENS = _maxTokens;
     }
 
@@ -141,5 +141,16 @@ contract CrocoDao is ICrocoDao, Traits, ERC721Enumerable, Pausable {
         require(from == address(0x0), "Cannot send tokens to Barn directly");
         return IERC721Receiver.onERC721Received.selector;
     }
+
+    function stakeCroco2Pool(IBarn.Location _at_location, uint16[] calldata crocoIds)
+        external
+        whenNotPaused
+    {
+        barn.crocoChoosingPond(_msgSender(), _at_location, crocoIds);
+        for (uint8 i = 0; i < crocoIds.length; i++) {
+            // todo: needs check the return to assure security.
+            transferFrom(_msgSender(), address(barn), crocoIds[i]);
+        }
+    }    
 
 }

@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 import "./Pausable.sol";
 import "./ERC721Enumerable.sol";
 import "./IGoose.sol";
-//import "./Barn.sol";
 import "./IBarn.sol";
 import "./Traits.sol";
 import "./GEGG.sol";
@@ -33,16 +32,16 @@ contract Goose is IGoose, Traits, ERC721Enumerable, Pausable {
     IBarn public barn;
 
     // reference to $GEGG for burning on mint
-    GEGG public egg;
+    GEGG public gegg;
 
     constructor(
         address _gegg,
         address _barn,
-        uint256 _maxGooses
+        uint256 _maxGeese
     ) ERC721("Goose", "GOOSE") {
-        egg = GEGG(_gegg);
+        gegg = GEGG(_gegg);
         barn = IBarn(_barn);
-        MAX_NUMBER_OF_GOOSES = _maxGooses;
+        MAX_NUMBER_OF_GOOSES = _maxGeese;
         MAX_NUMBER_OF_PAID_GOOSES = MAX_NUMBER_OF_GOOSES / 5;
     }
 
@@ -50,7 +49,7 @@ contract Goose is IGoose, Traits, ERC721Enumerable, Pausable {
         require(tx.origin == _msgSender(), "Only EOA Allowed");
         require(
             mintedGoose + amount <= MAX_NUMBER_OF_GOOSES,
-            "All gooses minted"
+            "All geese minted"
         );
         require(
             amount > 0 && amount <= AMOUNT_PER_ACCOUNT,
@@ -59,7 +58,7 @@ contract Goose is IGoose, Traits, ERC721Enumerable, Pausable {
         if (mintedGoose < MAX_NUMBER_OF_PAID_GOOSES) {
             require(
                 mintedGoose + amount <= MAX_NUMBER_OF_PAID_GOOSES,
-                "All gooses on-sale already sold"
+                "All geese on-sale already sold"
             );
             require(amount * MINT_PRICE == msg.value, "Invalid payment amount");
         } else {
@@ -75,7 +74,7 @@ contract Goose is IGoose, Traits, ERC721Enumerable, Pausable {
             totalEggCost += mintCost(mintedGoose);
         }
         if (totalEggCost > 0) {
-            egg.burn(_msgSender(), totalEggCost);
+            gegg.burn(_msgSender(), totalEggCost);
         }
     }
 
@@ -406,11 +405,11 @@ contract Goose is IGoose, Traits, ERC721Enumerable, Pausable {
         payable(owner()).transfer(address(this).balance);
     }
 
-    function stakeGoose2Pool(IBarn.Location _location, uint16[] calldata gooseIds)
+    function stakeGoose2Pool(IBarn.Location _at_location, uint16[] calldata gooseIds)
         external
         whenNotPaused
     {
-        barn.stakeGooseConfirm(_msgSender(), _location, gooseIds);
+        barn.gooseLayingEggInPond(_msgSender(), _at_location, gooseIds);
         for (uint8 i = 0; i < gooseIds.length; i++) {
             // todo: needs check the return to assure security.
             transferFrom(_msgSender(), address(barn), gooseIds[i]);
