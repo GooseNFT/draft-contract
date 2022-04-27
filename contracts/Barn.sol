@@ -87,29 +87,21 @@ contract Barn is IBarn, Ownable, Pausable {
         SEASON_REST = rest;
     }
 
-    function getGooseSetNum( Location _location ) public view returns (uint) {
+    function doPause() public onlyOwner{
+        _pause();
+    }
+
+    function doUnpause() public onlyOwner{
+        _unpause();
+    }
+
+    function getUserStakedGooseIds( address _owner, uint _index ) public view returns ( uint ) {
+        return userGooseIds[_owner].at(_index);
+    }
+
+    function getGooseSetNum( Location _location )  public view returns (uint) {
         return gooseLocation[_location].length();
     }
-
-     function testGas_init( ) external {
-        for( uint16 i = 0; i < 1; i++ ){
-            gooseStake[i] = GooseStats({
-                gooseId: i,
-                owner: _msgSender(),
-                blockNumber: uint32(block.number) + i,
-                unclaimedBalance: 0,
-                location: Location( i % 10 )
-            });
-        }
-    }
-
-    function testGas_mod( ) external {
-        for( uint16 i = 0; i < 1; i++ ){
-            gooseStake[i].blockNumber += 2;
-            gooseStake[i].unclaimedBalance += 100;
-        }
-    }
-
 
     function stakeGooseConfirm( address _owner, Location _location, uint16[] calldata gooseIds ) external whenNotPaused{
         require ( currentSeasonFirstBlockHeight != 0, "GooseGame Season is not open yet." );
@@ -126,9 +118,7 @@ contract Barn is IBarn, Ownable, Pausable {
         }
     }
 
-    function getUserStakedGooseIds( address _owner, uint _index ) view public returns ( uint ) {
-        return userGooseIds[_owner].at(_index);
-    }
+
 
     function switchGoosePond( Location _to_location, uint16[] calldata gooseIds ) external whenNotPaused{
         require ( currentSeasonFirstBlockHeight != 0, "GooseGame Season is not open yet." );
@@ -140,7 +130,7 @@ contract Barn is IBarn, Ownable, Pausable {
         }
     }
 
-    function CrocoStatsAndVote( Location _location, uint16[] calldata crocoIds ) external whenNotPaused{
+    function stakeCrocoAndVote( Location _location, uint16[] calldata crocoIds ) external whenNotPaused{
         require ( currentSeasonFirstBlockHeight != 0, "GooseGame Season is not open yet." );
         for( uint8 i = 0; i < crocoIds.length; i++ ){
             require( croco.ownerOf(crocoIds[i]) == _msgSender(), "Your are not the Croco owner!" );
@@ -180,7 +170,6 @@ contract Barn is IBarn, Ownable, Pausable {
         require ( block.number >  currentSeasonLastBlockHeight + SEASON_REST, "Season is resting" );
         _seasonIsInProgress = true;
         currentSeasonFirstBlockHeight = uint32(block.number);
-
         
     }
 

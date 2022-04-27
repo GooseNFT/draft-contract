@@ -9,6 +9,8 @@ import "./Traits.sol";
 import "./GEGG.sol";
 
 
+// Noice: this contract is not finised.
+
 contract CrocoDao is ICrocoDao, Traits, ERC721Enumerable, Pausable {
     // mint price
     uint256 public constant MINT_PRICE = .15 ether;

@@ -150,7 +150,7 @@ describe( "GooseNFT Contracts Test", function(){
     });
 
 
-
+/*
     describe( "Gas Consumtion", function(){
 
         it( "Case 1: testGas ", async function (){
@@ -166,6 +166,8 @@ describe( "GooseNFT Contracts Test", function(){
             //expect())
         });
     });
+ */   
+
     describe( "Season Related Operations", function(){
 
         it( "Case 1: blockNumber manipulate", async function (){

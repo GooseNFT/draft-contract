@@ -16,6 +16,8 @@ interface IBarn {
       Pond9
     }  
 
+  function stakeGooseConfirm( address _owner, Location _location, uint16[] calldata gooseIds ) external;
+
 /*
   function stakeGoose2Pool( Location _pool, uint16[] calldata tokenIds ) external;
   function switchGoosePond( Location _to_pool, uint16[] calldata tokenIds ) external;
