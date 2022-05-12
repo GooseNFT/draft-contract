@@ -175,8 +175,8 @@ describe( "GooseNFT Contracts Test", function(){
             //console.log(r)
         })
 
-        it( "Case 2: seasonClose need SeasonOpen first", async function(){
-            await expect(barn.seasonClose()).to.be.revertedWith("Error: VM Exception while processing transaction: reverted with reason string 'Season has already Closed'");
+        it( "Case 2: seasonCloseTrigger need SeasonOpen first", async function(){
+            await expect(barn.seasonCloseTrigger()).to.be.revertedWith("Error: VM Exception while processing transaction: reverted with reason string 'Season has already Closed'");
             
         })
         
@@ -184,15 +184,16 @@ describe( "GooseNFT Contracts Test", function(){
             barn = await Barn.deploy(egg.address, croco.address, 6, 5)
             await barn.seasonOpen();
             await sleep(4000);
-            await expect(barn.seasonClose()).to.be.revertedWith("Error: VM Exception while processing transaction: reverted with reason string 'Season close time hasn't arrived'");
+            await expect(barn.seasonCloseTrigger()).to.be.revertedWith("Error: VM Exception while processing transaction: reverted with reason string 'Season close time hasn't arrived'");
             await sleep(3000);
-            await barn.seasonClose();
-            await expect(barn.seasonClose()).to.be.revertedWith("Error: VM Exception while processing transaction: reverted with reason string 'Season has already Closed'");
+            await barn.seasonCloseTrigger();
+            await expect(barn.seasonCloseTrigger()).to.be.revertedWith("Error: VM Exception while processing transaction: reverted with reason string 'Season has already Closed'");
             const r = await barn.seasonRecord(0);
-            //console.log(r);
             const r2 = await barn.getRank(2, r['topPondsOfSession']);
             const r3 = await barn.getRank(9, r['topPondsOfSession']);
-            //console.log(r2)
+//             console.log(r);
+//             console.log(r2)
+//             console.log(r3)
             // 291 means Pond 1, 2, 3 ranks as No.1, No.2 No.3.
             expect(r['topPondsOfSession']).to.be.equal(291);
             expect(r2).to.be.equal(2);
@@ -200,7 +201,7 @@ describe( "GooseNFT Contracts Test", function(){
             await expect(barn.seasonOpen()).to.be.revertedWith("Error: VM Exception while processing transaction: reverted with reason string 'Season is resting'");
             await sleep(5000);
             await barn.seasonOpen();
-            await expect(barn.seasonClose()).to.be.revertedWith("Error: VM Exception while processing transaction: reverted with reason string 'Season close time hasn't arrived'");
+            await expect(barn.seasonCloseTrigger()).to.be.revertedWith("Error: VM Exception while processing transaction: reverted with reason string 'Season close time hasn't arrived'");
             //expect(barn.seasonRecord(0))
             //
             
@@ -343,8 +344,8 @@ describe( "GooseNFT Contracts Test", function(){
                 await goose.connect(users[i]).gooseLayingEggInPond( randomInt % 10, [myTokenId] );
             }
             const opt_overides2 = {gasLimit: 1562664};
-            console.log("seasonClose at          : ", Date.now() - start)
-            await barn.seasonClose(opt_overides2);
+            console.log("seasonCloseTrigger at          : ", Date.now() - start)
+            await barn.seasonCloseTrigger(opt_overides2);
             const s0 = await barn.seasonRecord(0);
             const s1 = await barn.seasonRecord(1);
             console.log("---------barn.seasonRecord--------")
@@ -420,10 +421,9 @@ describe( "GooseNFT Contracts Test", function(){
 
     describe( "Staking Games Ver. 2", function(){
         it(" Case 1: Stake 97 users' Goose NFT and check rewards", async function() {
-            const SEASON_DURATION = await barn.SEASON_DURATION();
-            const SEASON_REST     = await barn.SEASON_REST();
+            const SEASON_DURATION = await barn.seasonDuration();
+            const SEASON_REST     = await barn.seasonRest();
             console.log("SEASON_DURATION: ", SEASON_DURATION, " SEASON_REST", SEASON_REST);
-            var   genisisBlock    = 0;
             this.timeout(1000000);
             var closed = false;
             var afterStakeBlock = Number.MAX_SAFE_INTEGER;
@@ -431,14 +431,13 @@ describe( "GooseNFT Contracts Test", function(){
             var checkresult = 0;
 
             ethers.provider.on("block", blockNumber =>{
-                //console.log("Current blockNumber: ", blockNumber, " genisisBlock: ", genisisBlock);
                 if( blockNumber > afterStakeBlock && genisisBlock != 0 && !closed ){
                     if ( blockNumber - genisisBlock > SEASON_DURATION ){
                         console.log("kick, off event block");
                         closed = true;
                         ethers.provider.off("block");
-                        barn.seasonClose().then(tx=>{
-                            console.log("seasonClose summited at block: ", tx.blockNumber);
+                        barn.seasonCloseTrigger().then(tx=>{
+                            console.log("seasonCloseTrigger summited at block: ", tx.blockNumber);
                             return tx.wait();
                         }).then( receipt => {
                             console.log("get receipt: ", receipt.blockNumber);
