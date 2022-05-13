@@ -1,4 +1,4 @@
--session indexed
--duration changeable
+-introduced session indexed
+-changeable: duration/rest
 
 
