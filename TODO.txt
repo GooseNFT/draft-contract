@@ -50,4 +50,10 @@ For the moves acquired from Leveling up, moves can be applied as a whole to all 
 
 //
 
-Traits  
+Traits 
+
+//
+
+Pond Betting
+
+ 

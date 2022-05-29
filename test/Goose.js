@@ -151,7 +151,7 @@ describe( "GooseNFT Contracts Test", function(){
 
 
 /*
-    describe( "Gas Consumtion", function(){
+    describe( "Gas Consumption", function(){
 
         it( "Case 1: testGas ", async function (){
             await barn.testGas_init();
@@ -422,9 +422,11 @@ describe( "GooseNFT Contracts Test", function(){
     describe( "Staking Games Ver. 2", function(){
         it(" Case 1: Stake 97 users' Goose NFT and check rewards", async function() {
             const SEASON_DURATION = await barn.seasonDuration();
-            const SEASON_REST     = await barn.seasonRest();
+            const SEASON_REST     = await barn.restDuration();
             console.log("SEASON_DURATION: ", SEASON_DURATION, " SEASON_REST", SEASON_REST);
+            var genisisBlock = 0;
             this.timeout(1000000);
+            var close_flag;
             var closed = false;
             var afterStakeBlock = Number.MAX_SAFE_INTEGER;
 
