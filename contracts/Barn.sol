@@ -15,20 +15,24 @@ import "hardhat/console.sol";
 
 contract Barn is IBarn, Ownable, Pausable {
 
+    // GEGG paramiters
     uint constant multiplier = 1;
     uint public constant GEGG_DAILY_LIMIT = 1000000 * multiplier;
-
-    event newSeasonOpened(uint32 seasonIndex, uint32 seasonOpenBlockHeight, uint32 seasonDuration);
-
-    // Event to be raised when updating season duration duration
-    event EmitSessionDurationChanged(uint16 _seasonDuration, uint16 _restDuration);
 
     // season duration
     uint16 public seasonDuration = 115;
     uint16 public restDuration = 20;
-    uint16 public MAX_ALLOW_SEASON_DURATION = 115;
+    uint16 public MAX_ALLOW_SEASON_DURATION = 120;
+    uint16 public MIN_ALLOW_SEASON_DURATION = 100;
     uint16 public MAX_ALLOW_SEASON_REST = 20;
+    uint16 public MIN_ALLOW_SEASON_REST = 10;
 
+    // Event to be raised when updating season duration duration
+    event EmitSessionAndRestDurationChanged(uint16 _seasonDuration, uint16 _restDuration);
+    
+    event newSeasonOpened(uint32 seasonIndex, uint32 seasonOpenBlockHeight, uint32 seasonDuration);
+
+    // genesis block height to prevent game forking
     uint32 public genesisSessionBlockHeight = 0;
 
     // History of every season's record from genesis season。
@@ -176,11 +180,14 @@ contract Barn is IBarn, Ownable, Pausable {
 
     // Update duration
     function updateSessionDuration(uint16 _seasonDuration, uint16 _restDuration) external onlyOwner  {
-        require(_seasonDuration != 0 && _seasonDuration <= MAX_ALLOW_SEASON_DURATION, "season duration not allowed");
-        require(_restDuration != 0 && _restDuration <= MAX_ALLOW_SEASON_REST, "season rest duration not allowed");
+        require(_seasonDuration != 0 && _seasonDuration < MAX_ALLOW_SEASON_DURATION, "season duration exceed limit allowed");
+        require(_seasonDuration != 0 && _seasonDuration > MIN_ALLOW_SEASON_DURATION, "season duration below limit allowed");
+        require(_restDuration != 0 && _restDuration < MAX_ALLOW_SEASON_REST, "season rest duration exceed limit allowed");
+        require(_restDuration != 0 && _restDuration > MIN_ALLOW_SEASON_REST, "season rest duration below limit allowed");
+
         seasonDuration = _seasonDuration;
         restDuration = _restDuration;
-        emit EmitSessionDurationChanged(_seasonDuration, _restDuration);
+        emit EmitSessionAndRestDurationChanged(_seasonDuration, _restDuration);
     }
 
     function seasonOpen() external {
