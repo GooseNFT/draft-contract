@@ -18,7 +18,7 @@ contract Barn is IBarn, Ownable, Pausable {
     uint constant multiplier = 1;
     uint public constant GEGG_DAILY_LIMIT = 1000000 * multiplier;
 
-    event newSeasonOpened(uint256 seasonIndex, uint32 seasonOpenBlockHeight, uint32 seasonDuration);
+    event newSeasonOpened(uint32 seasonIndex, uint32 seasonOpenBlockHeight, uint32 seasonDuration);
 
     // Event to be raised when updating season duration duration
     event EmitSessionDurationChanged(uint16 _seasonDuration, uint16 _restDuration);
@@ -41,13 +41,13 @@ contract Barn is IBarn, Ownable, Pausable {
         uint16 topPondsOfSession;  // indicate top 3 Ponds.
         uint8  crocoVotedPond;
         uint32 combineCrocoVotedDuration; 
-        uint128[10] combineGooseLaidEggDurationInLocation; // duration of all geese laid egg in specific location
+        uint32[10] combineGooseLaidEggDurationInLocation; // duration of all geese laid egg in specific location
     }
 
     // Unique identifier for a game season.
-    uint256 public seasonIndex = 0;
+    uint32 public seasonIndex = 0;
     // Maps the session to a unique identifer
-    mapping( uint256 => SeasonRecord ) public seasonRecord; 
+    mapping( uint32 => SeasonRecord ) public seasonRecord; 
 
     /*
     * will be reset on seasonBegan(), and seasonEnded()
@@ -62,7 +62,7 @@ contract Barn is IBarn, Ownable, Pausable {
         uint16 gooseId;
         address gooseOwner;
         uint256 unclaimedGEGGBalance;  // unclaimed balance before the time of blockNumber.
-        uint256 laidEggDuringSeasonId;
+        uint32 laidEggDuringSeasonId;
         uint32 laidEggAtBlockHeight;  // this blockNumber is when the Goose laid egg /switched to this location. 
         Location laidEggLocation;
     }
@@ -190,7 +190,7 @@ contract Barn is IBarn, Ownable, Pausable {
             require ( _msgSender() == owner() );
             genesisSessionBlockHeight = uint32(block.number);
         } else {
-            uint256 lastIndex = seasonIndex - 1; // last index to be valid
+            uint32 lastIndex = seasonIndex - 1; // last index to be valid
             require ( block.number > ( seasonRecord[lastIndex].seasonOpenBlockHeight + seasonRecord[lastIndex].seasonDuration + seasonRecord[lastIndex].restDuration ), "Season is resting" );
         }
 
@@ -229,9 +229,8 @@ contract Barn is IBarn, Ownable, Pausable {
 
             for ( uint j = 0; j < gooseIdsLocation[Location(i)].length(); j++ ){
                 uint16 gooseID = uint16(gooseIdsLocation[Location(i)].at(j));
-                require( gooseRecord[gooseID].laidEggDuringSeasonId == seasonIndex, "Invalid SeasonID"); //should already accounted for laid egg during rest time before season
-
                 uint32 gooseLaidEggAtBlockHeight = gooseRecord[gooseID].laidEggAtBlockHeight;
+                uint32 gooseLaidEggDuringSeasonId = gooseRecord[gooseID].laidEggDuringSeasonId;
 
                 console.log("gooseID", gooseID);
                 console.log("gooseRecord[gooseID].laidEggAtBlockHeight: ", gooseLaidEggAtBlockHeight);
@@ -240,10 +239,12 @@ contract Barn is IBarn, Ownable, Pausable {
                     gooseAtLocationCounter[uint8(Location.Barn)] += 1; 
                     seasonRecord[seasonIndex].combineGooseLaidEggDurationInLocation[uint(Location.Barn)] += seasonDuration;
                 } else if( gooseLaidEggAtBlockHeight < seasonOpenBlockHeight ){
+                    require( gooseLaidEggDuringSeasonId == seasonIndex, "Invalid SeasonID"); //should already accounted for laid egg during rest time before season
                     gooseAtLocationCounter[i] += 1;
                     seasonRecord[seasonIndex].combineGooseLaidEggDurationInLocation[i] += seasonDuration;
                 } else if ( gooseLaidEggAtBlockHeight < seasonCloseBlockHeight )
                     {
+                    require( gooseLaidEggDuringSeasonId == seasonIndex, "Invalid SeasonID"); //should already accounted for laid egg during rest time before season
                     laidEggDuration = seasonCloseBlockHeight - gooseLaidEggAtBlockHeight;
                     gooseAtLocationCounter[i] += 1;
                     seasonRecord[seasonIndex].combineGooseLaidEggDurationInLocation[i] += laidEggDuration;
@@ -331,8 +332,8 @@ contract Barn is IBarn, Ownable, Pausable {
         return 0;
     }
 
-    function getCombineGooseLaidEggDurationPerLocationOfSeason( uint32 _seasonIndex ) view public returns ( uint128[] memory ){
-        uint128[] memory vals = new uint128[](10);
+    function getCombineGooseLaidEggDurationPerLocationOfSeason( uint32 _seasonIndex ) view public returns ( uint32[] memory ){
+        uint32[] memory vals = new uint32[](10);
         for( uint i = 0; i < 10; i++ ){
             vals[i] = seasonRecord[_seasonIndex].combineGooseLaidEggDurationInLocation[i];
         }
@@ -348,8 +349,8 @@ contract Barn is IBarn, Ownable, Pausable {
         uint32 totalDuration = 0;
         for( uint8 i = 0; i < gooseIds.length; i++ ){
             require( _msgSender() == gooseRecord[gooseIds[i]].gooseOwner, " It's not your NFT" );
-            uint256 sID_from = gooseRecord[gooseIds[i]].laidEggDuringSeasonId;
-            uint256 sID_to   = seasonIndex; // current SessonIndex
+            uint32 sID_from = gooseRecord[gooseIds[i]].laidEggDuringSeasonId;
+            uint32 sID_to   = seasonIndex; // current SessonIndex
             console.log("sID_from", sID_from);
             console.log("sID_to", sID_to);
 
@@ -357,11 +358,11 @@ contract Barn is IBarn, Ownable, Pausable {
             uint32 gooseLaidEggAtBlockHeight = gooseRecord[gooseIds[i]].laidEggAtBlockHeight;
             uint256 gooseunclaimedGEGGBalance = gooseRecord[gooseIds[i]].unclaimedGEGGBalance;
 
-            for ( uint256 j = sID_from; j <= sID_to; j ++ ){
+            for ( uint32 j = sID_from; j <= sID_to; j ++ ){
                 if( checkSeasonExists(j) ){
                     console.log("tik, seasonID = #", j);
                     uint256 round_rewards;
-                    uint256 rank = getRank(location, seasonRecord[j].topPondsOfSession);
+                    uint32 rank = getRank(location, seasonRecord[j].topPondsOfSession);
                     uint32 laidEggDuration;
                     uint32 focusSeasonOpenBlockHeight = seasonRecord[j].seasonOpenBlockHeight;
                     uint32 focusSeasonDuration = seasonRecord[j].seasonDuration;
@@ -442,7 +443,7 @@ contract Barn is IBarn, Ownable, Pausable {
         }
     }
 
-    function checkSeasonExists( uint256 i) view internal returns (bool) {
+    function checkSeasonExists( uint32 i) view internal returns (bool) {
         return ( seasonRecord[i].combineCrocoVotedDuration != 0 || seasonRecord[i].topPondsOfSession != 0 );
     }
 
