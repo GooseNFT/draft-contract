@@ -15,11 +15,11 @@ import "hardhat/console.sol";
 
 contract Barn is IBarn, Ownable, Pausable {
 
-    // GEGG paramiters
+    // GEGG parameters
     uint constant multiplier = 1;
     uint public constant GEGG_DAILY_LIMIT = 1000000 * multiplier;
 
-    // season duration
+    // SEASON parameters
     uint16 public seasonDuration = 115;
     uint16 public restDuration = 20;
     uint16 public MAX_ALLOW_SEASON_DURATION = 120;
@@ -27,13 +27,13 @@ contract Barn is IBarn, Ownable, Pausable {
     uint16 public MAX_ALLOW_SEASON_REST = 20;
     uint16 public MIN_ALLOW_SEASON_REST = 10;
 
-    // Event to be raised when updating season duration duration
+    // Event to be raised when updating season/rest duration
     event EmitSessionAndRestDurationChanged(uint16 _seasonDuration, uint16 _restDuration);
     
-    event newSeasonOpened(uint32 seasonIndex, uint32 seasonOpenBlockHeight, uint32 seasonDuration);
-
     // genesis block height to prevent game forking
     uint32 public genesisSessionBlockHeight = 0;
+    // Unique identifier for a game season.
+    uint32 public seasonIndex = 0;
 
     // History of every season's record from genesis season。
     // will get updated once season closes.
@@ -48,10 +48,10 @@ contract Barn is IBarn, Ownable, Pausable {
         uint32[10] combineGooseLaidEggDurationInLocation; // duration of all geese laid egg in specific location
     }
 
-    // Unique identifier for a game season.
-    uint32 public seasonIndex = 0;
     // Maps the session to a unique identifer
     mapping( uint32 => SeasonRecord ) public seasonRecord; 
+
+    event newSeasonOpened(uint32 seasonIndex, uint32 seasonOpenBlockHeight, uint32 seasonDuration, uint32 restDuration);
 
     /*
     * will be reset on seasonBegan(), and seasonEnded()
@@ -210,7 +210,7 @@ contract Barn is IBarn, Ownable, Pausable {
 
         _seasonInProgress = true;
 
-        emit newSeasonOpened(seasonIndex, seasonOpenBlockHeight, seasonDuration);
+        emit newSeasonOpened(seasonIndex, seasonOpenBlockHeight, seasonDuration, restDuration);
     }
     function seasonCloseTrigger() external {
         require ( _seasonInProgress == true, "Season has already Closed" );
