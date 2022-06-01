@@ -15,6 +15,8 @@ import "hardhat/console.sol";
 
 contract Barn is IBarn, Ownable, Pausable {
 
+    bool isTestRun = true;
+
     //// GEGG parameters
     uint constant multiplier = 1;
     uint public constant GEGG_DAILY_LIMIT = 1000000 * multiplier;
@@ -57,6 +59,27 @@ contract Barn is IBarn, Ownable, Pausable {
         require(_seasonDuration != 0 && _seasonDuration >= MIN_ALLOW_SEASON_DURATION, "season duration below limit allowed");
         require(_restDuration != 0 && _restDuration <= MAX_ALLOW_SEASON_REST, "season rest duration exceed limit allowed");
         require(_restDuration != 0 && _restDuration >= MIN_ALLOW_SEASON_REST, "season rest duration below limit allowed");
+
+        seasonDuration = _seasonDuration;
+        restDuration = _restDuration;
+
+        for( uint32 i = 0; i < seasonIndex; i++ ){
+            delete seasonRecord[i];
+        }
+
+        genesisSessionBlockHeight = uint32(block.number);
+        seasonIndex = 0;
+
+        emit EmitInitialSessions(_seasonDuration, _restDuration);
+    }
+
+    function initialSessions(uint16 _seasonDuration, uint16 _restDuration, bool _isTestRun) public onlyOwner  {
+        if (_isTestRun == false) {
+            require(_seasonDuration != 0 && _seasonDuration <= MAX_ALLOW_SEASON_DURATION, "season duration exceed limit allowed");
+            require(_seasonDuration != 0 && _seasonDuration >= MIN_ALLOW_SEASON_DURATION, "season duration below limit allowed");
+            require(_restDuration != 0 && _restDuration <= MAX_ALLOW_SEASON_REST, "season rest duration exceed limit allowed");
+            require(_restDuration != 0 && _restDuration >= MIN_ALLOW_SEASON_REST, "season rest duration below limit allowed");
+        }
 
         seasonDuration = _seasonDuration;
         restDuration = _restDuration;
@@ -145,7 +168,7 @@ contract Barn is IBarn, Ownable, Pausable {
     constructor( address _gegg, address _croco, uint16 _seasonDuration, uint16 _restDuration ){
         gegg = GEGG(_gegg);
         croco = CrocoDao(_croco);
-        initialSessions(_seasonDuration, _restDuration);
+        initialSessions(_seasonDuration, _restDuration, isTestRun);
     }
 
     function doPause() public onlyOwner{ // TODO: Should we add optional duration?
