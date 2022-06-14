@@ -185,11 +185,13 @@ contract GoldenEggGame is IGoldenEggGame, Ownable, Pausable {
         return gooseIdsInLocation[_location].length();
     }
 
-    function gooseEnterGame( address _user, Location _location, uint16[] calldata gooseIds ) external whenNotPaused{
+    function gooseEnterGame( address _user, Location _location, uint16[] calldata gooseIdsCallData ) external whenNotPaused{
         require ( genesisSeasonBlockHeight != 0, "GooseGame has not initialized." );
-        for( uint8 i = 0; i < gooseIds.length; i++ ){
-            gooseRecordIndex[gooseIds[i]] = GooseRecord({
-                gooseId: gooseIds[i],
+        // for( uint8 i = 0; i < gooseIds.length; i++ ){
+        //    ...
+        // }
+            gooseRecordIndex[gooseIdsCallData[0]] = GooseRecord({
+                gooseId: gooseIdsCallData[0],
                 gooseOwner: _user,
                 unclaimedGEGGBalance: 0,
                 layEggDuringSeasonIndex: seasonIndex,
@@ -197,27 +199,26 @@ contract GoldenEggGame is IGoldenEggGame, Ownable, Pausable {
                 layEggAtBlockHeight: uint32(block.number),
                 layEggLocation: _location
             });
-            gooseIdsInLocation[_location].add(gooseIds[i]);
-            gooseIdsInOwnerAddress[_user].add(gooseIds[i]);
-        }
+            gooseIdsInLocation[_location].add(gooseIdsCallData[0]);
+            gooseIdsInOwnerAddress[_user].add(gooseIdsCallData[0]);
     }
 
     function gooseSwitchLocation( Location _location, uint16[] calldata gooseIds ) external whenNotPaused{
-        for( uint8 i = 0; i < gooseIds.length; i++ ){
-            require( gooseRecordIndex[gooseIds[i]].gooseOwner == _msgSender(), "You are not the Goose owner!" );
+        require ( gooseRecordIndex[gooseIds[0]].gooseOwner == _msgSender(), "You are not the Goose owner!" );
+        // for( uint8 i = 0; i < gooseIds.length; i++ ){
+        //  ...
+        // } 
+        gooseClaimToBalance(gooseIds);
 
-            gooseClaimToBalance(gooseIds);
+        gooseRecordIndex[gooseIds[0]].layEggDuringSeasonIndex = seasonIndex;
+        gooseRecordIndex[gooseIds[0]].layEggDuringSeasonId = getSeasonID(seasonIndex);
+        gooseRecordIndex[gooseIds[0]].layEggAtBlockHeight = uint32(block.number);
 
-            gooseRecordIndex[gooseIds[i]].layEggDuringSeasonIndex = seasonIndex;
-            gooseRecordIndex[gooseIds[i]].layEggDuringSeasonId = getSeasonID(seasonIndex);
-            gooseRecordIndex[gooseIds[i]].layEggAtBlockHeight = uint32(block.number);
+        Location oldLocation = gooseRecordIndex[gooseIds[0]].layEggLocation;
+        gooseIdsInLocation[oldLocation].remove(gooseIds[0]);
 
-            Location oldLocation = gooseRecordIndex[gooseIds[i]].layEggLocation;
-            gooseIdsInLocation[oldLocation].remove(gooseIds[i]);
-
-            gooseRecordIndex[gooseIds[i]].layEggLocation = _location;
-            gooseIdsInLocation[_location].add(gooseIds[i]);
-        }
+        gooseRecordIndex[gooseIds[0]].layEggLocation = _location;
+        gooseIdsInLocation[_location].add(gooseIds[0]);
     }
 
     function crocoEnterGame( address _user, Location _location, uint16[] calldata crocoIds ) external whenNotPaused{
