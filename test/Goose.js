@@ -337,11 +337,11 @@ describe( "GooseNFT Contracts Test", function(){
             const start = Date.now();
             console.log("seasonOpen at          : ", Date.now() - start)
             await barn.seasonOpen();
-            console.log(nUsers, "users gooseLayingEggInPond at  : ", Date.now() - start)
+            console.log(nUsers, "users gooseEnterGame at  : ", Date.now() - start)
             for( var i = 0; i < nUsers; i++ ){
                 randomInt = Math.floor(Math.random() * (Number.MAX_SAFE_INTEGER - 101 ) );
                 var myTokenId = await goose.tokenOfOwnerByIndex(users[i].address,0)
-                await goose.connect(users[i]).gooseLayingEggInPond( randomInt % 10, [myTokenId] );
+                await goose.connect(users[i]).gooseEnterGame( randomInt % 10, [myTokenId] );
             }
             const opt_overides2 = {gasLimit: 1562664};
             console.log("seasonCloseTrigger at          : ", Date.now() - start)

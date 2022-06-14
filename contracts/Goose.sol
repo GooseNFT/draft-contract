@@ -409,7 +409,7 @@ contract Goose is IGoose, Traits, ERC721Enumerable, Pausable {
         external
         whenNotPaused
     {
-        barn.gooseLayingEggInPond(_msgSender(), _at_location, gooseIds);
+        barn.gooseEnterGame(_msgSender(), _at_location, gooseIds);
         for (uint8 i = 0; i < gooseIds.length; i++) {
             // todo: needs check the return to assure security.
             transferFrom(_msgSender(), address(barn), gooseIds[i]);

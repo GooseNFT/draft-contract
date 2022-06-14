@@ -146,7 +146,7 @@ contract CrocoDao is ICrocoDao, Traits, ERC721Enumerable, Pausable {
         external
         whenNotPaused
     {
-        barn.crocoChoosingPond(_msgSender(), _at_location, crocoIds);
+        barn.crocoEnterGame(_msgSender(), _at_location, crocoIds);
         for (uint8 i = 0; i < crocoIds.length; i++) {
             // todo: needs check the return to assure security.
             transferFrom(_msgSender(), address(barn), crocoIds[i]);

@@ -98,7 +98,7 @@ contract Barn is IBarn, Ownable, Pausable {
     // will get updated once season closes.
     struct SeasonRecord{
         uint32 seasonOpenBlockHeight;
-        uint32 seasonCloseTriggerBlockHeight;
+        uint32 seasonCloseTriggerBlockHeight; // no need?
         uint16 seasonDuration; // in blocks
         uint16 restDuration; // in blocks
         uint16 topPondsOfSession;  // indicate top 3 Ponds.
@@ -123,7 +123,13 @@ contract Barn is IBarn, Ownable, Pausable {
     
 
     function getSeasonID(uint32 seasonIndex_) internal view returns (uint256) {
-        return uint(keccak256(abi.encode(seasonIndex_, genesisSessionBlockHeight)));
+        return uint(keccak256(abi.encode(seasonIndex_, genesisSessionBlockHeight))); // add some more variable nonce of current block?
+    }
+
+    struct UserRecord {
+        uint8 moveAllow; // amount of NFT + bonus
+        uint8 moveCount;
+        uint256 lastMoveSeasonId;
     }
 
     struct GooseRecord {
@@ -140,14 +146,14 @@ contract Barn is IBarn, Ownable, Pausable {
         uint16 crocoId;
         address crocoOwner;
         uint256 unclaimedGEGGBalance;
-        uint32 chosePondDuringSeasonIndex;
-        uint256 chosePondDuringSeasonId;
-        uint32 choseAtBlockHeight;
-        Location choseLocation;
+        uint32 choosePondDuringSeasonIndex;
+        uint256 choosePondDuringSeasonId;
+        uint32 choosePondAtBlockHeight;
+        Location chooseLocation;
     }
 
-    mapping( uint16 => GooseRecord ) public gooseRecord;
-    mapping( uint16 => CrocoRecord ) public crocoRecord;
+    mapping( uint32 => GooseRecord ) public gooseRecord;
+    mapping( uint32 => CrocoRecord ) public crocoRecord;
 
     using EnumerableSet for EnumerableSet.UintSet;
 
@@ -171,7 +177,7 @@ contract Barn is IBarn, Ownable, Pausable {
         initialSessions(_seasonDuration, _restDuration, isTestRun);
     }
 
-    function doPause() public onlyOwner{ // TODO: Should we add optional duration?
+    function doPause() public onlyOwner{
         _pause();
     }
 
@@ -187,8 +193,8 @@ contract Barn is IBarn, Ownable, Pausable {
         return gooseIdsLocation[_location].length();
     }
 
-    function gooseLayingEggInPond( address _user, Location _location, uint16[] calldata gooseIds ) external whenNotPaused{
-        require ( seasonOpenBlockHeight != 0, "GooseGame Season has not initialized." );
+    function gooseEnterGame( address _user, Location _location, uint16[] calldata gooseIds ) external whenNotPaused{
+        require ( genesisSessionBlockHeight != 0, "GooseGame has not initialized." );
         for( uint8 i = 0; i < gooseIds.length; i++ ){
             gooseRecord[gooseIds[i]] = GooseRecord({
                 gooseId: gooseIds[i],
@@ -204,28 +210,35 @@ contract Barn is IBarn, Ownable, Pausable {
         }
     }
 
-    function gooseSwitchingPond( Location _location, uint16[] calldata gooseIds ) external whenNotPaused{
-        require ( seasonOpenBlockHeight != 0, "GooseGame Season has not initialized." );
+    function gooseSwitchLocation( Location _location, uint16[] calldata gooseIds ) external whenNotPaused{
         for( uint8 i = 0; i < gooseIds.length; i++ ){
             require( gooseRecord[gooseIds[i]].gooseOwner == _msgSender(), "You are not the Goose owner!" );
-            require( gooseRecord[gooseIds[i]].laidEggDuringSeasonId == getSeasonID(seasonIndex), "Invalid SeasonID");
-            require( gooseRecord[gooseIds[i]].laidEggLocation != _location, "Your goose is already laying egg at the location" );
+
+            gooseClaimToBalance(gooseIds[i]);
+
+            gooseRecord[gooseIds[i]].laidEggDuringSeasonIndex = seasonIndex;
+            gooseRecord[gooseIds[i]].laidEggDuringSeasonId = getSeasonID(seasonIndex);
             gooseRecord[gooseIds[i]].laidEggAtBlockHeight = uint32(block.number);
+
+            Location oldLocation = gooseRecord[gooseIds[i]].laidEggLocation;
+            gooseIdsLocation[oldLocation].remove(gooseIds[i]);
+
             gooseRecord[gooseIds[i]].laidEggLocation = _location;
+            gooseIdsLocation[_location].add(gooseIds[i]);
         }
     }
 
-    function crocoChoosingPond( address _user, Location _location, uint16[] calldata crocoIds ) external whenNotPaused{
-        require ( seasonOpenBlockHeight != 0, "GooseGame Season is not open yet." );
+    function crocoEnterGame( address _user, Location _location, uint16[] calldata crocoIds ) external whenNotPaused{
+        require ( genesisSessionBlockHeight != 0, "GooseGame has not initialized." );
         for( uint8 i = 0; i < crocoIds.length; i++ ){            
             crocoRecord[crocoIds[i]] = CrocoRecord({
                 crocoId: crocoIds[i],
                 crocoOwner: _user,
                 unclaimedGEGGBalance: 0,
-                chosePondDuringSeasonIndex: seasonIndex,
-                chosePondDuringSeasonId: getSeasonID(seasonIndex),
-                choseAtBlockHeight: uint32(block.number),
-                choseLocation: _location
+                choosePondDuringSeasonIndex: seasonIndex,
+                choosePondDuringSeasonId: getSeasonID(seasonIndex),
+                choosePondAtBlockHeight: uint32(block.number),
+                chooseLocation: _location
                 }
             );
             crocoIdsLocation[_location].add(crocoIds[i]);
@@ -233,17 +246,20 @@ contract Barn is IBarn, Ownable, Pausable {
         }
     }
 
-    // [Goose Rules update_20220421] not allowed for Croco changing votes
+    function crocoSwitchLocation( Location _location, uint16[] calldata crocoIds ) external whenNotPaused{
+        for( uint8 i = 0; i < crocoIds.length; i++ ){
+            require( crocoRecord[crocoIds[i]].crocoOwner == _msgSender(), "You are not the Croco owner!" );
+            crocoRecord[crocoIds[i]].choosePondDuringSeasonIndex = seasonIndex;
+            crocoRecord[crocoIds[i]].choosePondDuringSeasonId = getSeasonID(seasonIndex);
+            crocoRecord[crocoIds[i]].choosePondAtBlockHeight = uint32(block.number);
 
-    // function changeCrocoVote( Location _to_location, uint16[] calldata crocoIds ) external whenNotPaused{
-    //     require ( seasonOpenBlockHeight != 0, "GooseGame Season is not open yet." );
-    //     for( uint8 i = 0; i < crocoIds.length; i++ ){
-    //         require( crocoRecord[crocoIds[i]].crocoOwner == _msgSender(), "You are not the Croco owner!" );
-    //         require( crocoRecord[crocoIds[i]].choseLocation != _to_location, "Your Croco have already voted this pool" );
-    //         crocoRecord[crocoIds[i]].choseLocation = _to_location;
-    //         crocoRecord[crocoIds[i]].choseAtBlockHeight = uint32(block.number);
-    //     }
-    // }
+            Location oldLocation = crocoRecord[crocoIds[i]].chooseLocation;
+            crocoIdsLocation[oldLocation].remove(crocoIds[i]);
+
+            crocoRecord[crocoIds[i]].chooseLocation = _location;
+            crocoIdsLocation[_location].add(crocoIds[i]);
+        }
+    }
 
     function seasonOpen() external {
         require ( _seasonInProgress == false, "Season is already on-going" );
@@ -300,26 +316,31 @@ contract Barn is IBarn, Ownable, Pausable {
                 if( gooseLaidEggAtBlockHeight < ( seasonOpenBlockHeight - restDuration ) ){
                     gooseAtLocationCounter[uint8(Location.Barn)] += 1; 
                     seasonRecord[seasonIndex].combineGooseLaidEggDurationInLocation[uint(Location.Barn)] += seasonDuration;
-                } else if( gooseLaidEggAtBlockHeight < seasonOpenBlockHeight ){
+                } else if( gooseLaidEggAtBlockHeight < seasonOpenBlockHeight ){ // during rest period
                     require( gooseLaidEggDuringSeasonId == getSeasonID(seasonIndex), "Invalid SeasonID"); //should already accounted for laid egg during rest time before season
                     gooseAtLocationCounter[i] += 1;
                     seasonRecord[seasonIndex].combineGooseLaidEggDurationInLocation[i] += seasonDuration;
-                } else if ( gooseLaidEggAtBlockHeight < seasonCloseBlockHeight )
-                    {
+                } else if ( gooseLaidEggAtBlockHeight < seasonCloseBlockHeight ){
                     require( gooseLaidEggDuringSeasonId == getSeasonID(seasonIndex), "Invalid SeasonID"); //should already accounted for laid egg during rest time before season
-                    laidEggDuration = seasonCloseBlockHeight - gooseLaidEggAtBlockHeight;
                     gooseAtLocationCounter[i] += 1;
+                    laidEggDuration = seasonCloseBlockHeight - gooseLaidEggAtBlockHeight;
                     seasonRecord[seasonIndex].combineGooseLaidEggDurationInLocation[i] += laidEggDuration;
                 }
             }
            
+            // crocoRecord[crocoIds[i]].choosePondDuringSeasonIndex = seasonIndex;
+            // crocoRecord[crocoIds[i]].choosePondDuringSeasonId = getSeasonID(seasonIndex);
+            // crocoRecord[crocoIds[i]].choosePondAtBlockHeight = uint32(block.number);
+
             for( uint j = 0; j < crocoIdsLocation[Location(i)].length(); j++ ) {
                 uint16 crocoID = uint16(crocoIdsLocation[Location(i)].at(j));
-                require( crocoRecord[crocoID].chosePondDuringSeasonId == getSeasonID(seasonIndex), "Invalid SeasonID"); //should already accounted for chose pond during rest time before season
-                if( crocoRecord[crocoID].choseAtBlockHeight < seasonOpenBlockHeight ){
+                uint32 gooseLaidEggAtBlockHeight = gooseRecord[gooseID].laidEggAtBlockHeight;
+                uint256 gooseLaidEggDuringSeasonId = gooseRecord[gooseID].laidEggDuringSeasonId;
+                require( crocoRecord[crocoID].choosePondDuringSeasonId == getSeasonID(seasonIndex), "Invalid SeasonID"); //should already accounted for choose pond during rest time before season
+                if( crocoRecord[crocoID].choosePondAtBlockHeight < seasonOpenBlockHeight ){
                     crocoPoolVoteCounter[uint8(Location.Barn)] += 1;
                 }else{
-                    uint32 votedDuration = seasonCloseBlockHeight - crocoRecord[crocoID].choseAtBlockHeight;
+                    uint32 votedDuration = seasonCloseBlockHeight - crocoRecord[crocoID].choosePondAtBlockHeight;
                     crocoPoolVoteCounter[i] += 1;
                     seasonRecord[seasonIndex].combineCrocoVotedDuration += votedDuration;
                 }
@@ -403,12 +424,11 @@ contract Barn is IBarn, Ownable, Pausable {
     }
 
     /*
-    * used by switchPond, save the unclaimed rewards to stake structs.
+    * used by gooseSwitchLocation, save the unclaimed rewards to stake structs.
     *
     */
 
     function gooseClaimToBalance(uint16[] calldata gooseIds) public {
-        uint32 totalDuration = 0;
         for( uint8 i = 0; i < gooseIds.length; i++ ){
             require( _msgSender() == gooseRecord[gooseIds[i]].gooseOwner, " It's not your NFT" );
             uint32 sIndex_from = gooseRecord[gooseIds[i]].laidEggDuringSeasonIndex;
@@ -434,7 +454,7 @@ contract Barn is IBarn, Ownable, Pausable {
                     if( rank == 0 || gooseLaidEggAtBlockHeight < (focusSeasonOpenBlockHeight - focusSeasonRestDuration) ) {
                         round_rewards = GEGG_DAILY_LIMIT * 3 / 10 / 7;   // todo: need to float type // SAME AS BARN
                         
-                    }else {
+                    } else if( gooseLaidEggAtBlockHeight < focusSeasonOpenBlockHeight ){ // during rest period and season
                         // two conditions are required: 
                         // 1. rank is in Top 3, and 2. Goose's stake Time is within this Season.
                         // round_rewards = GEGG_DAILY_LIMIT * 0.7 * ( 4 / 6 - rank / 6); rank (reverse for calculation) is 1, 2 or 3;
@@ -457,11 +477,9 @@ contract Barn is IBarn, Ownable, Pausable {
                         gooseunclaimedGEGGBalance += round_rewards * laidEggDuration / seasonRecord[j].combineGooseLaidEggDurationInLocation[uint(location)];
                     }
                     
-                    totalDuration += laidEggDuration;
                     console.log("pool No.     = ", uint(location));
                     console.log("pool rank    = ", rank);
                     console.log("round_rewards = ", round_rewards);
-                    console.log("totalDuration    = ", totalDuration);
                 }
             }
             // change stake blockNumber of NFT after claim, move it from Pond to Barn.
@@ -506,7 +524,7 @@ contract Barn is IBarn, Ownable, Pausable {
     }
 
     function checkSeasonExists( uint32 i) view internal returns (bool) {
-        return ( seasonRecord[i].combineCrocoVotedDuration != 0 || seasonRecord[i].topPondsOfSession != 0 );
+        return ( seasonRecord[i].combineGooseLaidEggDurationInLocation != 0 || seasonRecord[i].topPondsOfSession != 0 );
     }
 
     function printBlockNumber () view public returns ( uint ) {

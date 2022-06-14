@@ -16,7 +16,7 @@ interface IBarn {
       Pond9
     }  
 
-  function gooseLayingEggInPond( address _user, Location _location, uint16[] calldata gooseIds ) external;
-  function crocoChoosingPond( address _user, Location _location, uint16[] calldata crocoIds ) external;
+  function gooseEnterGame( address _user, Location _location, uint16[] calldata gooseIds ) external;
+  function crocoEnterGame( address _user, Location _location, uint16[] calldata crocoIds ) external;
 
 }
