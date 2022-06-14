@@ -22,8 +22,8 @@ describe( "GooseNFT Contracts Test", function(){
     let croco;
     let GEgg;
     let egg;
-    let Barn;
-    let barn;
+    let GoldenEggGame;
+    let goldenegggame;
     let owner;
     let user1;
     let user2;
@@ -38,7 +38,7 @@ describe( "GooseNFT Contracts Test", function(){
         Goose    = await ethers.getContractFactory("Goose");
         CrocoDao = await ethers.getContractFactory("CrocoDao");
         GEgg     = await ethers.getContractFactory("GEGG");
-        Barn     = await ethers.getContractFactory("Barn");
+        GoldenEggGame     = await ethers.getContractFactory("GoldenEggGame");
         [owner, user1, user2, ...users] = await ethers.getSigners();
         owner_address = await owner.getAddress();
         nUsers  = users.length;
@@ -50,11 +50,11 @@ describe( "GooseNFT Contracts Test", function(){
         croco = await CrocoDao.deploy(egg.address, 888);
 
 
-        barn  = await Barn.deploy(egg.address, croco.address, 115, 20);
+        goldenegggame  = await GoldenEggGame.deploy(egg.address, croco.address, 115, 20);
 
         
         //eggaddress = await egg.address;
-        goose = await Goose.deploy(egg.address,barn.address, 50000);
+        goose = await Goose.deploy(egg.address,goldenegggame.address, 50000);
 
         //await goose.deployed();
         
@@ -154,12 +154,12 @@ describe( "GooseNFT Contracts Test", function(){
     describe( "Gas Consumption", function(){
 
         it( "Case 1: testGas ", async function (){
-            await barn.testGas_init();
-            var r = await barn.gooseRecord(0);
+            await goldenegggame.testGas_init();
+            var r = await goldenegggame.gooseRecordIndex(0);
             //console.log(r)
-            await barn.testGas_mod();
+            await goldenegggame.testGas_mod();
 
-            r = await barn.gooseRecord(0);
+            r = await goldenegggame.gooseRecordIndex(0);
 
             //console.log(r)
 
@@ -171,26 +171,26 @@ describe( "GooseNFT Contracts Test", function(){
     describe( "Season Related Operations", function(){
 
         it( "Case 1: blockNumber manipulate", async function (){
-            var r = await barn.printBlockNumber();
+            var r = await goldenegggame.printBlockNumber();
             //console.log(r)
         })
 
         it( "Case 2: seasonCloseTrigger need SeasonOpen first", async function(){
-            await expect(barn.seasonCloseTrigger()).to.be.revertedWith("Error: VM Exception while processing transaction: reverted with reason string 'Season has already Closed'");
+            await expect(goldenegggame.seasonCloseTrigger()).to.be.revertedWith("Error: VM Exception while processing transaction: reverted with reason string 'Season has already Closed'");
             
         })
         
         it( "Case 3: Continuous season operations with empty players", async function(){
-            barn = await Barn.deploy(egg.address, croco.address, 6, 5)
-            await barn.seasonOpen();
+            goldenegggame = await GoldenEggGame.deploy(egg.address, croco.address, 6, 5)
+            await goldenegggame.seasonOpen();
             await sleep(4000);
-            await expect(barn.seasonCloseTrigger()).to.be.revertedWith("Error: VM Exception while processing transaction: reverted with reason string 'Season close time hasn't arrived'");
+            await expect(goldenegggame.seasonCloseTrigger()).to.be.revertedWith("Error: VM Exception while processing transaction: reverted with reason string 'Season close time hasn't arrived'");
             await sleep(3000);
-            await barn.seasonCloseTrigger();
-            await expect(barn.seasonCloseTrigger()).to.be.revertedWith("Error: VM Exception while processing transaction: reverted with reason string 'Season has already Closed'");
-            const r = await barn.seasonRecord(0);
-            const r2 = await barn.getRank(2, r['topPondsOfSession']);
-            const r3 = await barn.getRank(9, r['topPondsOfSession']);
+            await goldenegggame.seasonCloseTrigger();
+            await expect(goldenegggame.seasonCloseTrigger()).to.be.revertedWith("Error: VM Exception while processing transaction: reverted with reason string 'Season has already Closed'");
+            const r = await goldenegggame.seasonRecordIndex(0);
+            const r2 = await goldenegggame.getRank(2, r['topPondsOfSession']);
+            const r3 = await goldenegggame.getRank(9, r['topPondsOfSession']);
 //             console.log(r);
 //             console.log(r2)
 //             console.log(r3)
@@ -198,11 +198,11 @@ describe( "GooseNFT Contracts Test", function(){
             expect(r['topPondsOfSession']).to.be.equal(291);
             expect(r2).to.be.equal(2);
             expect(r3).to.be.equal(0);
-            await expect(barn.seasonOpen()).to.be.revertedWith("Error: VM Exception while processing transaction: reverted with reason string 'Season is resting'");
+            await expect(goldenegggame.seasonOpen()).to.be.revertedWith("Error: VM Exception while processing transaction: reverted with reason string 'Season is resting'");
             await sleep(5000);
-            await barn.seasonOpen();
-            await expect(barn.seasonCloseTrigger()).to.be.revertedWith("Error: VM Exception while processing transaction: reverted with reason string 'Season close time hasn't arrived'");
-            //expect(barn.seasonRecord(0))
+            await goldenegggame.seasonOpen();
+            await expect(goldenegggame.seasonCloseTrigger()).to.be.revertedWith("Error: VM Exception while processing transaction: reverted with reason string 'Season close time hasn't arrived'");
+            //expect(goldenegggame.seasonRecordIndex(0))
             //
             
         })
@@ -219,7 +219,7 @@ describe( "GooseNFT Contracts Test", function(){
             Goose    = await ethers.getContractFactory("Goose");
             CrocoDao = await ethers.getContractFactory("CrocoDao");
             GEgg     = await ethers.getContractFactory("GEGG");
-            Barn     = await ethers.getContractFactory("Barn");
+            GoldenEggGame     = await ethers.getContractFactory("GoldenEggGame");
     
 
             egg   = await GEgg.deploy();
@@ -228,19 +228,19 @@ describe( "GooseNFT Contracts Test", function(){
             croco = await CrocoDao.deploy(egg.address, 888);
     
     
-            barn  = await Barn.deploy(egg.address, croco.address, 100,10);
+            goldenegggame  = await GoldenEggGame.deploy(egg.address, croco.address, 100,10);
     
             
             //eggaddress = await egg.address;
-            goose = await Goose.deploy(egg.address,barn.address, 50000);
+            goose = await Goose.deploy(egg.address,goldenegggame.address, 50000);
     
             const egg_r = await egg.deployTransaction.wait();
-            const barn_r = await barn.deployTransaction.wait();
+            const goldenegggame_r = await goldenegggame.deployTransaction.wait();
             const goose_r = await goose.deployTransaction.wait();
     
             console.log("Contract Deployment Gas info: ", 
             ethers.utils.formatUnits(egg_r.gasUsed * gas_price, "gwei"), 
-            ethers.utils.formatUnits(barn_r.gasUsed * gas_price, "gwei"), 
+            ethers.utils.formatUnits(goldenegggame_r.gasUsed * gas_price, "gwei"), 
             ethers.utils.formatUnits(goose_r.gasUsed * gas_price, "gwei"));
             //expect(1).to.be.equal(1);
         });
@@ -336,7 +336,7 @@ describe( "GooseNFT Contracts Test", function(){
             var randomInt = 0;
             const start = Date.now();
             console.log("seasonOpen at          : ", Date.now() - start)
-            await barn.seasonOpen();
+            await goldenegggame.seasonOpen();
             console.log(nUsers, "users gooseEnterGame at  : ", Date.now() - start)
             for( var i = 0; i < nUsers; i++ ){
                 randomInt = Math.floor(Math.random() * (Number.MAX_SAFE_INTEGER - 101 ) );
@@ -345,23 +345,23 @@ describe( "GooseNFT Contracts Test", function(){
             }
             const opt_overides2 = {gasLimit: 1562664};
             console.log("seasonCloseTrigger at          : ", Date.now() - start)
-            await barn.seasonCloseTrigger(opt_overides2);
-            const s0 = await barn.seasonRecord(0);
-            const s1 = await barn.seasonRecord(1);
-            console.log("---------barn.seasonRecord--------")
+            await goldenegggame.seasonCloseTrigger(opt_overides2);
+            const s0 = await goldenegggame.seasonRecordIndex(0);
+            const s1 = await goldenegggame.seasonRecordIndex(1);
+            console.log("---------goldenegggame.seasonRecordIndex--------")
             console.log(s0,s1);
 
             await expect(goose.tokenOfOwnerByIndex(users[0].address,0)).to.be.revertedWith("ERC721Enumerable: owner index out of bounds");
 
-            var barnToken = await goose.tokenOfOwnerByIndex(barn.address,0);
-            var balanceOf = await goose.balanceOf(barn.address);
-            console.log("barnToken: ", barnToken, "    balanceOf: ", balanceOf);
+            var goldenegggameToken = await goose.tokenOfOwnerByIndex(goldenegggame.address,0);
+            var balanceOf = await goose.balanceOf(goldenegggame.address);
+            console.log("goldenegggameToken: ", goldenegggameToken, "    balanceOf: ", balanceOf);
             expect(balanceOf.toNumber()).to.be.equal(nUsers)
 
             var ranks = new Array(3);
             for( var i = 0; i < 10; i++ ){
-                const count = await barn.getNumberOfGooseInLocation(i);
-                const rank = await barn.getRank(i, s1['pondWinners']);
+                const count = await goldenegggame.getNumberOfGooseInLocation(i);
+                const rank = await goldenegggame.getRank(i, s1['pondWinners']);
                 if (rank != 0 ){
                     ranks[rank-1] = i;
                 }
@@ -376,8 +376,8 @@ describe( "GooseNFT Contracts Test", function(){
                 }
             })
             expect(checkNumber).to.be.equal(s1['pondWinners']);
-            console.log("genesisSessionBlockHeight = ", await barn.genesisSessionBlockHeight());
-            const poolDrations = await barn.getCombineGooseLaidEggDurationPerLocationOfSeason(1);
+            console.log("genesisSeasonBlockHeight = ", await goldenegggame.genesisSeasonBlockHeight());
+            const poolDrations = await goldenegggame.getCombineGooseLaidEggDurationPerLocationOfSeason(1);
             console.log("getCombineGooseLaidEggDurationPerLocationOfSeason:", poolDrations);
             var poolDrationsum = 0;
             poolDrations.forEach(v=>poolDrationsum+=v);
@@ -386,11 +386,11 @@ describe( "GooseNFT Contracts Test", function(){
             var durationSum = BigNumber.from(0);
             console.log(nUsers, "users gooseClaimToBalance at  : ", Date.now() - start)
             for( var i = 0; i < nUsers; i++ ){
-                var myTokenId = await barn.getGooseIdsFromOwnerAndIndex(users[i].address,0);
-                const res = await barn.connect(users[i]).gooseClaimToBalance([myTokenId]);
+                var myTokenId = await goldenegggame.getGooseIdsFromOwnerAddressAndIndex(users[i].address,0);
+                const res = await goldenegggame.connect(users[i]).gooseClaimToBalance([myTokenId]);
                 //console.log("res:   ",res)
                 //durationSum = durationSum.add(res);
-                const r = await barn.gooseRecord(myTokenId);
+                const r = await goldenegggame.gooseRecordIndex(myTokenId);
                 //console.log(r);
                 rewardSum = rewardSum.add(r['unclaimedGEGGBalance']);
                 console.log("Token #", myTokenId.toString(), " claimed:", r['unclaimedGEGGBalance'].toString());
@@ -407,9 +407,9 @@ describe( "GooseNFT Contracts Test", function(){
     async function calculateRewards(){
         var rewardSum = BigNumber.from(0);
         for( var i = 0; i < nUsers; i++ ){
-            var myTokenId = await barn.getGooseIdsFromOwnerAndIndex(users[i].address,0);
-            await( await barn.connect(users[i]).gooseClaimToBalance([myTokenId])).wait();
-            const r = await barn.gooseRecord(myTokenId);
+            var myTokenId = await goldenegggame.getGooseIdsFromOwnerAddressAndIndex(users[i].address,0);
+            await( await goldenegggame.connect(users[i]).gooseClaimToBalance([myTokenId])).wait();
+            const r = await goldenegggame.gooseRecordIndex(myTokenId);
             //console.log(r);
             rewardSum = rewardSum.add(r['unclaimedGEGGBalance']);
             console.log("Token #", myTokenId.toString(), " claimed:", r['unclaimedGEGGBalance'].toString());
@@ -421,8 +421,8 @@ describe( "GooseNFT Contracts Test", function(){
 
     describe( "Staking Games Ver. 2", function(){
         it(" Case 1: Stake 97 users' Goose NFT and check rewards", async function() {
-            const SEASON_DURATION = await barn.seasonDuration();
-            const SEASON_REST     = await barn.restDuration();
+            const SEASON_DURATION = await goldenegggame.seasonDuration();
+            const SEASON_REST     = await goldenegggame.restDuration();
             console.log("SEASON_DURATION: ", SEASON_DURATION, " SEASON_REST", SEASON_REST);
             var genisisBlock = 0;
             this.timeout(1000000);
@@ -438,7 +438,7 @@ describe( "GooseNFT Contracts Test", function(){
                         console.log("kick, off event block");
                         closed = true;
                         ethers.provider.off("block");
-                        barn.seasonCloseTrigger().then(tx=>{
+                        goldenegggame.seasonCloseTrigger().then(tx=>{
                             console.log("seasonCloseTrigger summited at block: ", tx.blockNumber);
                             return tx.wait();
                         }).then( receipt => {
@@ -460,15 +460,15 @@ describe( "GooseNFT Contracts Test", function(){
             var fs = require('fs');
             console.log("User Amount:", users.length);
             
-            await (await barn.seasonOpen()).wait();
-            genisisBlock = await barn.genesisSessionBlockHeight();
-            console.log(nUsers, "barn.seasonOpen at : ", genisisBlock)
+            await (await goldenegggame.seasonOpen()).wait();
+            genisisBlock = await goldenegggame.genesisSeasonBlockHeight();
+            console.log(nUsers, "goldenegggame.seasonOpen at : ", genisisBlock)
             var randomInt = 0;
             for( var i = 0; i < nUsers; i++ ){
                 randomInt = Math.floor(Math.random() * (Number.MAX_SAFE_INTEGER - 101 ) );
                 var myTokenId = await goose.tokenOfOwnerByIndex(users[i].address,0)
                 //if( i != 10 ) randomInt = 0;
-                await goose.connect(users[i]).stakeGoose2Pool( randomInt % 10, [myTokenId] );
+                await goose.connect(users[i]).stakeGoose2Game( randomInt % 10, [myTokenId] );
             }
 
             afterStakeBlock = await ethers.provider.getBlockNumber();
@@ -478,11 +478,11 @@ describe( "GooseNFT Contracts Test", function(){
                 //console.log("wait ")
                 await sleep(1000);
             }
-            const s0 = await barn.seasonRecord(0);
+            const s0 = await goldenegggame.seasonRecordIndex(0);
             var ranks = new Array(3);
             for( var i = 0; i < 10; i++ ){
-                const count = await barn.getNumberOfGooseInLocation(i);
-                const rank = await barn.getRank(i, s0['topPondsOfSession']);
+                const count = await goldenegggame.getNumberOfGooseInLocation(i);
+                const rank = await goldenegggame.getRank(i, s0['topPondsOfSession']);
                 if (rank != 0 ){
                     ranks[rank-1] = i;
                 }

@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import "./Pausable.sol";
 import "./ERC721Enumerable.sol";
 import "./IGoose.sol";
-import "./IBarn.sol";
+import "./IGoldenEggGame.sol";
 import "./Traits.sol";
 import "./GEGG.sol";
 
@@ -29,18 +29,18 @@ contract Goose is IGoose, Traits, ERC721Enumerable, Pausable {
     // used to ensure there are no duplicates
     mapping(uint256 => uint256) public existingCombinations;
 
-    IBarn public barn;
+    IGoldenEggGame public goldenegggame;
 
     // reference to $GEGG for burning on mint
     GEGG public gegg;
 
     constructor(
         address _gegg,
-        address _barn,
+        address _goldenegggame,
         uint256 _maxGeese
     ) ERC721("Goose", "GOOSE") {
         gegg = GEGG(_gegg);
-        barn = IBarn(_barn);
+        goldenegggame = IGoldenEggGame(_goldenegggame);
         MAX_NUMBER_OF_GOOSES = _maxGeese;
         MAX_NUMBER_OF_PAID_GOOSES = MAX_NUMBER_OF_GOOSES / 5;
     }
@@ -220,7 +220,7 @@ contract Goose is IGoose, Traits, ERC721Enumerable, Pausable {
         uint256,
         bytes calldata
     ) external pure returns (bytes4) {
-        require(from == address(0x0), "Cannot send Goose to Barn directly");
+        require(from == address(0x0), "Cannot send Goose to GoldenEggGame directly");
         return IERC721Receiver.onERC721Received.selector;
     }
 
@@ -405,14 +405,14 @@ contract Goose is IGoose, Traits, ERC721Enumerable, Pausable {
         payable(owner()).transfer(address(this).balance);
     }
 
-    function stakeGoose2Pool(IBarn.Location _at_location, uint16[] calldata gooseIds)
+    function stakeGoose2Game(IGoldenEggGame.Location _at_location, uint16[] calldata gooseIds)
         external
         whenNotPaused
     {
-        barn.gooseEnterGame(_msgSender(), _at_location, gooseIds);
+        goldenegggame.gooseEnterGame(_msgSender(), _at_location, gooseIds);
         for (uint8 i = 0; i < gooseIds.length; i++) {
             // todo: needs check the return to assure security.
-            transferFrom(_msgSender(), address(barn), gooseIds[i]);
+            transferFrom(_msgSender(), address(goldenegggame), gooseIds[i]);
         }
     }
 

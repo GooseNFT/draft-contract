@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-interface IBarn {
+interface IGoldenEggGame {
     enum Location { 
       Barn, 
       Pond1, 

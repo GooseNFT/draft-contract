@@ -21,7 +21,7 @@ npx hardhat test test/Goose.js --network localhost  # in another terminal.
  - Goose.sol : Inherits ERC271 NFT token protocol, implements Goose NFT releated methods.
  - CrocoDao.sol : Inherits ERC271 NFT protocol, user will mint & own Goose or CrocoDAO NFT.
  - Trait.sol : Inherited by Goose.sol and CrocoDao.sol, implements Traits related methods.
- - Barn.sol : Implements core gaming protocol, and holds user staked NFT essets.
+ - GoldenEggGame.sol : Implements core gaming protocol, and holds user staked NFT essets.
 
 ## Workflow
 
