@@ -417,55 +417,56 @@ contract GoldenEggGame is IGoldenEggGame, Ownable, Pausable {
     function gooseClaimToBalance(uint16[] calldata gooseIds) public {
         for( uint8 i = 0; i < gooseIds.length; i++ ){
             require( _msgSender() == gooseRecordIndex[gooseIds[i]].gooseOwner, " It's not your NFT" );
-            uint32 sIndex_from = gooseRecordIndex[gooseIds[i]].layEggDuringSeasonIndex;
-            uint32 sIndex_to   = seasonIndex; // current SessonIndex
-            console.log("sIndex_from", sIndex_from);
-            console.log("sIndex_to", sIndex_to);
+            uint32 layEggDuringSeasonIndex = gooseRecordIndex[gooseIds[i]].layEggDuringSeasonIndex;
+            uint32 currentSeasonIndex = seasonIndex; // current SessonIndex
+            console.log("layEggDuringSeasonIndex", layEggDuringSeasonIndex);
+            console.log("currentSeasonIndex", currentSeasonIndex);
 
-            Location location = gooseRecordIndex[gooseIds[i]].layEggLocation;
-            uint32 gooseLaidEggAtBlockHeight = gooseRecordIndex[gooseIds[i]].layEggAtBlockHeight;
+            Location layEggLocation = gooseRecordIndex[gooseIds[i]].layEggLocation;
+            uint32 layEggAtBlockHeight = gooseRecordIndex[gooseIds[i]].layEggAtBlockHeight;
             uint256 gooseunclaimedGEGGBalance = gooseRecordIndex[gooseIds[i]].unclaimedGEGGBalance;
 
-            for ( uint32 j = sIndex_from; j <= sIndex_to; j ++ ){
+            for ( uint32 j = layEggDuringSeasonIndex; j <= currentSeasonIndex; j ++ ){
                 if( checkSeasonExists(j) ){
-                    console.log("tik, seasonID = #", j);
-                    uint256 round_rewards;
-                    uint32 rank = getRank(location, seasonRecordIndex[j].topPondsOfSession);
+                    console.log("seasonID = #", j);
+                    uint256 round_rewards = 0;
+                    uint32 rankOfPond = getRank(layEggLocation, seasonRecordIndex[j].topPondsOfSession);
                     uint32 layEggDuration;
                     uint32 focusSeasonOpenBlockHeight = seasonRecordIndex[j].seasonOpenBlockHeight;
                     uint32 focusSeasonDuration = seasonRecordIndex[j].seasonDuration;
+                    uint32 focusSeasonCloseBlockHeight = focusSeasonOpenBlockHeight + focusSeasonDuration;
                     uint32 focusSeasonRestDuration = seasonRecordIndex[j].restDuration;
 
-                    // bug found(fixed): for those Goose whose Pond is in Top 3 rank, but are overdued in this Season.
-                    if( rank == 0 || gooseLaidEggAtBlockHeight < (focusSeasonOpenBlockHeight - focusSeasonRestDuration) ) {
+                    // for those Goose whose Pond is in Top 3 rank, but are overdued in this Season.
+                    if( rankOfPond == 0 || layEggAtBlockHeight < (focusSeasonOpenBlockHeight - focusSeasonRestDuration) ) {
                         round_rewards = GEGG_DAILY_LIMIT * 3 / 10 / 7;   // todo: need to float type // SAME AS BARN
                         
-                    } else if( gooseLaidEggAtBlockHeight < focusSeasonOpenBlockHeight ){ // during rest period and season
+                    } else if( layEggAtBlockHeight <= focusSeasonOpenBlockHeight || layEggAtBlockHeight <= focusSeasonCloseBlockHeight) { // including during rest period and season
                         // two conditions are required: 
                         // 1. rank is in Top 3, and 2. Goose's stake Time is within this Season.
                         // round_rewards = GEGG_DAILY_LIMIT * 0.7 * ( 4 / 6 - rank / 6); rank (reverse for calculation) is 1, 2 or 3;
-                        round_rewards = GEGG_DAILY_LIMIT * 7 / 10 * 4 / 6 -  GEGG_DAILY_LIMIT * 7 / 10 * rank / 6;
+                        round_rewards = GEGG_DAILY_LIMIT * 7 / 10 * 4 / 6 -  GEGG_DAILY_LIMIT * 7 / 10 * rankOfPond / 6;
                     }
 
                     // TODO: Croco
-                    if ( location == Location(seasonRecordIndex[j].crocoVotedPond) ){ 
+                    if ( layEggLocation == Location(seasonRecordIndex[j].crocoVotedPond) ){ 
                         //round_rewards = 0;
                     }
 
                     // TODO: blockNumber to be round up as 2000 4000 6000 8000
 
-                    if( gooseLaidEggAtBlockHeight < (focusSeasonOpenBlockHeight - focusSeasonRestDuration) ){
+                    if( layEggAtBlockHeight < (focusSeasonOpenBlockHeight - focusSeasonRestDuration) ){
                         gooseunclaimedGEGGBalance += round_rewards * focusSeasonDuration / seasonRecordIndex[j].combineGooseLaidEggDurationInLocation[uint(Location.Barn)];
-                    } else if ( gooseLaidEggAtBlockHeight < focusSeasonOpenBlockHeight ) {
-                        gooseunclaimedGEGGBalance += round_rewards * focusSeasonDuration / seasonRecordIndex[j].combineGooseLaidEggDurationInLocation[uint(location)];
-                    } else if ( gooseLaidEggAtBlockHeight < ( focusSeasonOpenBlockHeight + focusSeasonDuration ) ) {
-                        layEggDuration = ( focusSeasonOpenBlockHeight + focusSeasonDuration ) - gooseLaidEggAtBlockHeight;
-                        gooseunclaimedGEGGBalance += round_rewards * layEggDuration / seasonRecordIndex[j].combineGooseLaidEggDurationInLocation[uint(location)];
+                    } else if ( layEggAtBlockHeight < focusSeasonOpenBlockHeight ) {
+                        gooseunclaimedGEGGBalance += round_rewards * focusSeasonDuration / seasonRecordIndex[j].combineGooseLaidEggDurationInLocation[uint(layEggLocation)];
+                    } else if ( layEggAtBlockHeight < ( focusSeasonOpenBlockHeight + focusSeasonDuration ) ) {
+                        layEggDuration = ( focusSeasonOpenBlockHeight + focusSeasonDuration ) - layEggAtBlockHeight;
+                        gooseunclaimedGEGGBalance += round_rewards * layEggDuration / seasonRecordIndex[j].combineGooseLaidEggDurationInLocation[uint(layEggLocation)];
                     }
                     
-                    console.log("pool No.     = ", uint(location));
-                    console.log("pool rank    = ", rank);
-                    console.log("round_rewards = ", round_rewards);
+                    console.log("Pond No.     = ", uint(layEggLocation));
+                    console.log("Pond Rank    = ", rankOfPond);
+                    console.log("Round Reward = ", round_rewards);
                 }
             }
             // change stake blockNumber of NFT after claim, move it from Pond to Barn.
