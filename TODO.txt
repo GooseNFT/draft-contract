@@ -1,3 +1,13 @@
+-confirm MAX/MIN time 
+-check gas fee pre action
+-Any NFT in game cannot transfer ++ test case needed
+-Only account for NFT in session during season close [check]
+-Unstake = clean all balance reward
+-UserRecord = track moves
+-blockNumber to be round up as 2000 4000 6000 8000
+
+/./
+
 If player wants to take an adventure, player can start making a move during Resting period prior to the beginning of Egg-laying Season to avoid high gas fee <<<
 
 //

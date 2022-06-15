@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import "./Pausable.sol";
 import "./ERC721Enumerable.sol";
 import "./ICrocoDao.sol";
-import "./IBarn.sol";
+import "./IGoldenEggGame.sol";
 import "./Traits.sol";
 import "./GEGG.sol";
 
@@ -30,8 +30,8 @@ contract CrocoDao is ICrocoDao, Traits, ERC721Enumerable, Pausable {
     // used to ensure there are no duplicates
     mapping(uint256 => uint256) public existingCombinations;
 
-      // reference to the Barn for choosing random Wolf thieves
-    IBarn public barn;
+      // reference to the GoldenEggGame for choosing random Wolf thieves
+    IGoldenEggGame public goldenegggame;
 
     // reference to $GEGG for burning on mint
     GEGG public gegg;
@@ -138,18 +138,18 @@ contract CrocoDao is ICrocoDao, Traits, ERC721Enumerable, Pausable {
         uint256,
         bytes calldata
     ) external pure  returns (bytes4) {
-        require(from == address(0x0), "Cannot send tokens to Barn directly");
+        require(from == address(0x0), "Cannot send tokens to GoldenEggGame directly");
         return IERC721Receiver.onERC721Received.selector;
     }
 
-    function stakeCroco2Pool(IBarn.Location _at_location, uint16[] calldata crocoIds)
+    function stakeCroco2Game(IGoldenEggGame.Location _at_location, uint16[] calldata crocoIds)
         external
         whenNotPaused
     {
-        barn.crocoChoosingPond(_msgSender(), _at_location, crocoIds);
+        goldenegggame.crocoEnterGame(_msgSender(), _at_location, crocoIds);
         for (uint8 i = 0; i < crocoIds.length; i++) {
             // todo: needs check the return to assure security.
-            transferFrom(_msgSender(), address(barn), crocoIds[i]);
+            transferFrom(_msgSender(), address(goldenegggame), crocoIds[i]);
         }
     }    
 

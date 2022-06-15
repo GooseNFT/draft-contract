@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import "./Pausable.sol";
 import "./ERC721Enumerable.sol";
 import "./IGoose.sol";
-import "./IBarn.sol";
+import "./IGoldenEggGame.sol";
 import "./Traits.sol";
 import "./GEGG.sol";
 
@@ -36,11 +36,9 @@ contract Goose is IGoose, Traits, ERC721Enumerable, Pausable {
 
     constructor(
         address _gegg,
-        //address _barn,
         uint256 _maxGeese
     ) ERC721("Goose", "GOOSE") {
         gegg = GEGG(_gegg);
-        //barn = IBarn(_barn);
         MAX_NUMBER_OF_GOOSES = _maxGeese;
         MAX_NUMBER_OF_PAID_GOOSES = MAX_NUMBER_OF_GOOSES / 5;
     }
@@ -225,7 +223,7 @@ contract Goose is IGoose, Traits, ERC721Enumerable, Pausable {
         uint256,
         bytes calldata
     ) external pure returns (bytes4) {
-        require(from == address(0x0), "Cannot send Goose to Barn directly");
+        require(from == address(0x0), "Cannot send Goose to GoldenEggGame directly");
         return IERC721Receiver.onERC721Received.selector;
     }
 
@@ -427,7 +425,7 @@ contract Goose is IGoose, Traits, ERC721Enumerable, Pausable {
         barn.gooseLayingEggInPond( _at_location, gooseIds);
         for (uint8 i = 0; i < gooseIds.length; i++) {
             // todo: needs check the return to assure security.
-            transferFrom(_msgSender(), address(barn), gooseIds[i]);
+            transferFrom(_msgSender(), address(goldenegggame), gooseIds[i]);
         }
     }
     */

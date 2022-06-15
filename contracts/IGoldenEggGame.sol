@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-interface IBarn {
+interface IGoldenEggGame {
     enum Location { 
       Barn, 
       Pond1, 
@@ -16,7 +16,7 @@ interface IBarn {
       Pond9
     }  
 
-  function gooseLayingEggInPond( Location _location, uint16[] calldata gooseIds ) external;
-  function crocoChoosingPond( address _user, Location _location, uint16[] calldata crocoIds ) external;
+  function gooseEnterGame( Location _location, uint16[] calldata gooseIds ) external;
+  function crocoEnterGame( address _user, Location _location, uint16[] calldata crocoIds ) external;
 
 }
