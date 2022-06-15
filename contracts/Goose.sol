@@ -29,20 +29,25 @@ contract Goose is IGoose, Traits, ERC721Enumerable, Pausable {
     // used to ensure there are no duplicates
     mapping(uint256 => uint256) public existingCombinations;
 
-    IBarn public barn;
+    address public barn;
 
     // reference to $GEGG for burning on mint
     GEGG public gegg;
 
     constructor(
         address _gegg,
-        address _barn,
+        //address _barn,
         uint256 _maxGeese
     ) ERC721("Goose", "GOOSE") {
         gegg = GEGG(_gegg);
-        barn = IBarn(_barn);
+        //barn = IBarn(_barn);
         MAX_NUMBER_OF_GOOSES = _maxGeese;
         MAX_NUMBER_OF_PAID_GOOSES = MAX_NUMBER_OF_GOOSES / 5;
+    }
+
+    function setBarn( address _barnContract ) external onlyOwner {
+        //require( barn == 0x0, "barn contract is already set" )
+        barn = _barnContract;
     }
 
     function mint(uint8 amount) external payable whenNotPaused {
@@ -405,15 +410,26 @@ contract Goose is IGoose, Traits, ERC721Enumerable, Pausable {
         payable(owner()).transfer(address(this).balance);
     }
 
+    function approveBarn( uint16[] calldata gooseIds ) 
+        external
+    {
+        for (uint8 i = 0; i < gooseIds.length; i++) {
+            approve( barn, gooseIds[i]);
+        }
+    }
+
+    /*
+
     function stakeGoose2Pool(IBarn.Location _at_location, uint16[] calldata gooseIds)
         external
         whenNotPaused
     {
-        barn.gooseLayingEggInPond(_msgSender(), _at_location, gooseIds);
+        barn.gooseLayingEggInPond( _at_location, gooseIds);
         for (uint8 i = 0; i < gooseIds.length; i++) {
             // todo: needs check the return to assure security.
             transferFrom(_msgSender(), address(barn), gooseIds[i]);
         }
     }
+    */
 
 }

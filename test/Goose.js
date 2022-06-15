@@ -48,15 +48,18 @@ describe( "GooseNFT Contracts Test", function(){
         //const r = await (await egg.owner()).wait();
 
         croco = await CrocoDao.deploy(egg.address, 888);
+        goose = await Goose.deploy(egg.address, 50000);
+        await goose.deployed();
 
 
-        barn  = await Barn.deploy(egg.address, croco.address, 115, 20);
-
+        barn  = await Barn.deploy(egg.address, croco.address, goose.address, 115, 20);
+        await barn.deployed();
+        await goose.setBarn(barn.address);
         
         //eggaddress = await egg.address;
-        goose = await Goose.deploy(egg.address,barn.address, 50000);
+  
 
-        //await goose.deployed();
+   
         
 
 
@@ -181,7 +184,7 @@ describe( "GooseNFT Contracts Test", function(){
         })
         
         it( "Case 3: Continuous season operations with empty players", async function(){
-            barn = await Barn.deploy(egg.address, croco.address, 6, 5)
+            barn = await Barn.deploy(egg.address, croco.address, goose.address, 6, 5)
             await barn.seasonOpen();
             await sleep(4000);
             await expect(barn.seasonCloseTrigger()).to.be.revertedWith("Error: VM Exception while processing transaction: reverted with reason string 'Season close time hasn't arrived'");
@@ -228,11 +231,11 @@ describe( "GooseNFT Contracts Test", function(){
             croco = await CrocoDao.deploy(egg.address, 888);
     
     
-            barn  = await Barn.deploy(egg.address, croco.address, 100,10);
+            barn  = await Barn.deploy(egg.address, croco.address, goose.address, 100,10);
     
             
             //eggaddress = await egg.address;
-            goose = await Goose.deploy(egg.address,barn.address, 50000);
+            goose = await Goose.deploy(egg.address, 50000);
     
             const egg_r = await egg.deployTransaction.wait();
             const barn_r = await barn.deployTransaction.wait();
@@ -468,7 +471,10 @@ describe( "GooseNFT Contracts Test", function(){
                 randomInt = Math.floor(Math.random() * (Number.MAX_SAFE_INTEGER - 101 ) );
                 var myTokenId = await goose.tokenOfOwnerByIndex(users[i].address,0)
                 //if( i != 10 ) randomInt = 0;
-                await goose.connect(users[i]).stakeGoose2Pool( randomInt % 10, [myTokenId] );
+                console.log("barn.address=",barn.address);
+                console.log("user address=", users[i].address);
+                await goose.connect(users[i]).approveBarn([myTokenId]);
+                await barn.connect(users[i]).gooseLayingEggInPond( randomInt % 10, [myTokenId] );
             }
 
             afterStakeBlock = await ethers.provider.getBlockNumber();

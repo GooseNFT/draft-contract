@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 
 import "./Ownable.sol";
 import "./Pausable.sol";
-import "./Goose.sol";
+import "./IGoose.sol";
 import "./CrocoDao.sol";
 import "./GEGG.sol";
 import "./IBarn.sol";
@@ -34,10 +34,9 @@ contract Barn is IBarn, Ownable, Pausable {
 
     /// Function to update season/rest duration
     function updateSessionDuration(uint16 _seasonDuration, uint16 _restDuration) external onlyOwner  {
-        require(_seasonDuration != 0 && _seasonDuration <= MAX_ALLOW_SEASON_DURATION, "season duration exceed limit allowed");
-        require(_seasonDuration != 0 && _seasonDuration >= MIN_ALLOW_SEASON_DURATION, "season duration below limit allowed");
-        require(_restDuration != 0 && _restDuration <= MAX_ALLOW_SEASON_REST, "season rest duration exceed limit allowed");
-        require(_restDuration != 0 && _restDuration >= MIN_ALLOW_SEASON_REST, "season rest duration below limit allowed");
+
+        require( _seasonDuration >= MIN_ALLOW_SEASON_DURATION && _seasonDuration <= MAX_ALLOW_SEASON_DURATION, "season duration exceed limit allowed");
+        require( _restDuration >= MIN_ALLOW_SEASON_REST && _restDuration <= MAX_ALLOW_SEASON_REST, "season rest duration exceed limit allowed");
 
         seasonDuration = _seasonDuration;
         restDuration = _restDuration;
@@ -55,10 +54,8 @@ contract Barn is IBarn, Ownable, Pausable {
 
     // Initial/reset all sessions
     function initialSessions(uint16 _seasonDuration, uint16 _restDuration) public onlyOwner  {
-        require(_seasonDuration != 0 && _seasonDuration <= MAX_ALLOW_SEASON_DURATION, "season duration exceed limit allowed");
-        require(_seasonDuration != 0 && _seasonDuration >= MIN_ALLOW_SEASON_DURATION, "season duration below limit allowed");
-        require(_restDuration != 0 && _restDuration <= MAX_ALLOW_SEASON_REST, "season rest duration exceed limit allowed");
-        require(_restDuration != 0 && _restDuration >= MIN_ALLOW_SEASON_REST, "season rest duration below limit allowed");
+        require(_seasonDuration >= MIN_ALLOW_SEASON_DURATION && _seasonDuration <= MAX_ALLOW_SEASON_DURATION, "season duration exceed limit allowed");
+        require(_restDuration >= MIN_ALLOW_SEASON_REST && _restDuration <= MAX_ALLOW_SEASON_REST, "season rest duration exceed limit allowed");
 
         seasonDuration = _seasonDuration;
         restDuration = _restDuration;
@@ -75,10 +72,8 @@ contract Barn is IBarn, Ownable, Pausable {
 
     function initialSessions(uint16 _seasonDuration, uint16 _restDuration, bool _isTestRun) public onlyOwner  {
         if (_isTestRun == false) {
-            require(_seasonDuration != 0 && _seasonDuration <= MAX_ALLOW_SEASON_DURATION, "season duration exceed limit allowed");
-            require(_seasonDuration != 0 && _seasonDuration >= MIN_ALLOW_SEASON_DURATION, "season duration below limit allowed");
-            require(_restDuration != 0 && _restDuration <= MAX_ALLOW_SEASON_REST, "season rest duration exceed limit allowed");
-            require(_restDuration != 0 && _restDuration >= MIN_ALLOW_SEASON_REST, "season rest duration below limit allowed");
+            require(_seasonDuration >= MIN_ALLOW_SEASON_DURATION && _seasonDuration <= MAX_ALLOW_SEASON_DURATION, "season duration exceed limit allowed");
+            require(_restDuration >= MIN_ALLOW_SEASON_REST && _restDuration <= MAX_ALLOW_SEASON_REST, "season rest duration exceed limit allowed");
         }
 
         seasonDuration = _seasonDuration;
@@ -96,7 +91,7 @@ contract Barn is IBarn, Ownable, Pausable {
 
     // History of every season's record from genesis season。
     // will get updated once season closes.
-    struct SeasonRecord{
+    struct SeasonRecord {
         uint32 seasonOpenBlockHeight;
         uint32 seasonCloseTriggerBlockHeight;
         uint16 seasonDuration; // in blocks
@@ -125,7 +120,7 @@ contract Barn is IBarn, Ownable, Pausable {
     function getSeasonID(uint32 seasonIndex_) internal view returns (uint256) {
         return uint(keccak256(abi.encode(seasonIndex_, genesisSessionBlockHeight)));
     }
-
+    
     struct GooseRecord {
         uint16 gooseId;
         address gooseOwner;
@@ -161,13 +156,14 @@ contract Barn is IBarn, Ownable, Pausable {
     mapping( address => EnumerableSet.UintSet ) ownerCrocosIds; // Address to crocoIds[]
 
 
-    Goose goose;
+    IGoose goose;
     CrocoDao croco;
     GEGG gegg;
 
-    constructor( address _gegg, address _croco, uint16 _seasonDuration, uint16 _restDuration ){
+    constructor( address _gegg, address _croco, address _goose, uint16 _seasonDuration, uint16 _restDuration ){
         gegg = GEGG(_gegg);
         croco = CrocoDao(_croco);
+        goose = IGoose( _goose );
         initialSessions(_seasonDuration, _restDuration, isTestRun);
     }
 
@@ -187,12 +183,20 @@ contract Barn is IBarn, Ownable, Pausable {
         return gooseIdsLocation[_location].length();
     }
 
-    function gooseLayingEggInPond( address _user, Location _location, uint16[] calldata gooseIds ) external whenNotPaused{
+    function gooseLayingEggInPond(  Location _location, uint16[] calldata gooseIds ) external whenNotPaused{
         require ( seasonOpenBlockHeight != 0, "GooseGame Season has not initialized." );
+
         for( uint8 i = 0; i < gooseIds.length; i++ ){
+
+            require(goose.ownerOf(gooseIds[i]) == _msgSender(), "Owner mismatch");
+
+            // user transfer his/her own Goose NFT to Barn contract, this would revert if it fails ownership check.
+            goose.transferFrom(_msgSender(), address(this), gooseIds[i]); 
+
+            // if code runs at here, it implies the NFT was belonged to _msgSender()
             gooseRecord[gooseIds[i]] = GooseRecord({
                 gooseId: gooseIds[i],
-                gooseOwner: _user,
+                gooseOwner: _msgSender(),
                 unclaimedGEGGBalance: 0,
                 laidEggDuringSeasonIndex: seasonIndex,
                 laidEggDuringSeasonId: getSeasonID(seasonIndex),
@@ -200,7 +204,7 @@ contract Barn is IBarn, Ownable, Pausable {
                 laidEggLocation: _location
             });
             gooseIdsLocation[_location].add(gooseIds[i]);
-            ownerGooseIds[_user].add(gooseIds[i]);
+            ownerGooseIds[_msgSender()].add(gooseIds[i]);
         }
     }
 

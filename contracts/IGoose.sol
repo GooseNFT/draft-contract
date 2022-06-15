@@ -2,7 +2,9 @@
 
 pragma solidity ^0.8.0;
 
-interface IGoose {
+import "./IERC721.sol";
+
+interface IGoose is IERC721 {
 
   // struct to store each token's traits
   struct GooseTraits {
