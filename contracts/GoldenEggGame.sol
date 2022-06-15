@@ -69,14 +69,26 @@ contract GoldenEggGame is IGoldenEggGame, Ownable, Pausable {
     }
 
     function initialSessions(uint16 _seasonDuration, uint16 _restDuration, bool _isTestRun) public onlyOwner  {
+        //needs careful attention: this action will clear out all users' unclaimed rewards.
+
         if (_isTestRun == false) {
             require(_seasonDuration >= MIN_ALLOW_SEASON_DURATION && _seasonDuration <= MAX_ALLOW_SEASON_DURATION, "season duration exceed limit allowed");
             require(_restDuration >= MIN_ALLOW_SEASON_REST && _restDuration <= MAX_ALLOW_SEASON_REST, "season rest duration exceed limit allowed");
         }
 
+        if( seasonOpenBlockHeight > 0 ){
+            // to make sure last Season is properly closed.
+            
+            require( block.number > seasonCloseBlockHeight &&  block.number < (seasonCloseBlockHeight + restDuration),
+                    "reset is only allowed to happend during Season restDuration");
+        }
+
+
         seasonDuration = _seasonDuration;
         restDuration = _restDuration;
 
+        // all users' unclaimed rewards will be cleared out, need to notice 
+        // and encourage user to claim and withdraw rewards before reset.
         for( uint32 i = 0; i < seasonIndex; i++ ){
             delete seasonRecordIndex[i];
         }
@@ -84,7 +96,18 @@ contract GoldenEggGame is IGoldenEggGame, Ownable, Pausable {
         genesisSeasonBlockHeight = uint32(block.number);
         seasonIndex = 0;
 
+
+        // make sure the next Season cycle begains with seasonOpen();
+        _seasonInProgress = false;
+        seasonCloseBlockHeight = 0;
+        seasonOpenBlockHeight = 0;
+
+        // after initialSessions(reset), all NFTs still resides in contracts and recorded by gooseRecordIndex, and etc.
+        // we need to take care when calculate rewards.
+
         emit EmitInitialSessions(_seasonDuration, _restDuration);
+
+
     }
 
     // History of every season's record from genesis season。
@@ -484,6 +507,7 @@ contract GoldenEggGame is IGoldenEggGame, Ownable, Pausable {
             
             gooseRecordIndex[gooseIds[i]].unclaimedGEGGBalance = gooseunclaimedGEGGBalance;
             gooseRecordIndex[gooseIds[i]].layEggAtBlockHeight = uint32(block.number);
+            gooseRecordIndex[gooseIds[i]].layEggDuringSeasonIndex = currentSeasonIndex; // avoid duplicate rewards.
             gooseRecordIndex[gooseIds[i]].layEggDuringSeasonId = 0;
 
             if( gooseRecordIndex[gooseIds[i]].layEggLocation != Location.Barn ){
