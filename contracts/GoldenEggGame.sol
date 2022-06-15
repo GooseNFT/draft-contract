@@ -134,11 +134,6 @@ contract GoldenEggGame is IGoldenEggGame, Ownable, Pausable {
     uint32 public seasonCloseBlockHeight = 0; 
 
     bool private _seasonInProgress = false;    
-    
-
-    function getSeasonID(uint32 seasonIndex_) internal view returns (uint256) {
-        return uint(keccak256(abi.encode(seasonIndex_, genesisSeasonBlockHeight))); // add some more variable nonce of current block?
-    }
 
     struct UserRecord {
         uint8 moveAllowed; // amount of NFT + bonus
@@ -151,7 +146,6 @@ contract GoldenEggGame is IGoldenEggGame, Ownable, Pausable {
         address gooseOwner;
         uint256 unclaimedGEGGBalance;  // unclaimed balance before the time of blockNumber.
         uint32 layEggDuringSeasonIndex;
-        uint256 layEggDuringSeasonId;
         uint32 layEggAtBlockHeight;  // this blockNumber is when the Goose laid egg /switched to this location. 
         Location layEggLocation;
     }
@@ -161,7 +155,6 @@ contract GoldenEggGame is IGoldenEggGame, Ownable, Pausable {
         address crocoOwner;
         uint256 unclaimedGEGGBalance;
         uint32 choosePondDuringSeasonIndex;
-        uint256 choosePondDuringSeasonId;
         uint32 choosePondAtBlockHeight;
         Location chooseLocation;
     }
@@ -226,7 +219,6 @@ contract GoldenEggGame is IGoldenEggGame, Ownable, Pausable {
                 gooseOwner: _msgSender(),
                 unclaimedGEGGBalance: 0,
                 layEggDuringSeasonIndex: seasonIndex,
-                layEggDuringSeasonId: getSeasonID(seasonIndex),
                 layEggAtBlockHeight: uint32(block.number),
                 layEggLocation: _location
             });
@@ -244,7 +236,6 @@ contract GoldenEggGame is IGoldenEggGame, Ownable, Pausable {
         gooseClaimToBalance(gooseIds);
 
         gooseRecordIndex[gooseIds[0]].layEggDuringSeasonIndex = seasonIndex;
-        gooseRecordIndex[gooseIds[0]].layEggDuringSeasonId = getSeasonID(seasonIndex);
         gooseRecordIndex[gooseIds[0]].layEggAtBlockHeight = uint32(block.number);
 
         Location oldLocation = gooseRecordIndex[gooseIds[0]].layEggLocation;
@@ -262,7 +253,6 @@ contract GoldenEggGame is IGoldenEggGame, Ownable, Pausable {
                 crocoOwner: _user,
                 unclaimedGEGGBalance: 0,
                 choosePondDuringSeasonIndex: seasonIndex,
-                choosePondDuringSeasonId: getSeasonID(seasonIndex),
                 choosePondAtBlockHeight: uint32(block.number),
                 chooseLocation: _location
                 }
@@ -276,7 +266,6 @@ contract GoldenEggGame is IGoldenEggGame, Ownable, Pausable {
         for( uint8 i = 0; i < crocoIds.length; i++ ){
             require( crocoRecordIndex[crocoIds[i]].crocoOwner == _msgSender(), "You are not the Croco owner!" );
             crocoRecordIndex[crocoIds[i]].choosePondDuringSeasonIndex = seasonIndex;
-            crocoRecordIndex[crocoIds[i]].choosePondDuringSeasonId = getSeasonID(seasonIndex);
             crocoRecordIndex[crocoIds[i]].choosePondAtBlockHeight = uint32(block.number);
 
             Location oldLocation = crocoRecordIndex[crocoIds[i]].chooseLocation;
@@ -312,10 +301,8 @@ contract GoldenEggGame is IGoldenEggGame, Ownable, Pausable {
         uint32 seasonCloseTriggerBlockHeight = uint32(block.number);
         seasonRecordIndex[seasonIndex].seasonCloseTriggerBlockHeight = seasonCloseTriggerBlockHeight;
 
-        uint256 curSeasonId = getSeasonID(seasonIndex);
 
         console.log("curSeasonIndex: ", seasonIndex);
-        console.log("curSeasonId: ", curSeasonId);
         console.log("seasonOpenBlockHeight: ", seasonOpenBlockHeight);
         console.log("seasonCloseBlockHeight: ", seasonCloseBlockHeight);
         console.log("seasonDuration: ", seasonDuration);
@@ -332,7 +319,6 @@ contract GoldenEggGame is IGoldenEggGame, Ownable, Pausable {
             for ( uint j = 0; j < gooseIdsInLocation[Location(i)].length(); j++ ){
                 uint16 gooseID = uint16(gooseIdsInLocation[Location(i)].at(j));
                 uint32 gooseLaidEggAtBlockHeight = gooseRecordIndex[gooseID].layEggAtBlockHeight;
-                uint256 gooseLaidEggDuringSeasonId = gooseRecordIndex[gooseID].layEggDuringSeasonId;
 
                 console.log("gooseID", gooseID);
                 console.log("gooseRecordIndex[gooseID].layEggAtBlockHeight: ", gooseLaidEggAtBlockHeight);
@@ -341,11 +327,9 @@ contract GoldenEggGame is IGoldenEggGame, Ownable, Pausable {
                     gooseAtLocationCounter[uint8(Location.Barn)] += 1; 
                     seasonRecordIndex[seasonIndex].combineGooseLaidEggDurationInLocation[uint(Location.Barn)] += seasonDuration;
                 } else if( gooseLaidEggAtBlockHeight < seasonOpenBlockHeight ){ // during rest period
-                    require( gooseLaidEggDuringSeasonId == getSeasonID(seasonIndex), "Invalid SeasonID"); //should already accounted for laid egg during rest time before season
                     gooseAtLocationCounter[i] += 1;
                     seasonRecordIndex[seasonIndex].combineGooseLaidEggDurationInLocation[i] += seasonDuration;
                 } else if ( gooseLaidEggAtBlockHeight < seasonCloseBlockHeight ){
-                    require( gooseLaidEggDuringSeasonId == getSeasonID(seasonIndex), "Invalid SeasonID"); //should already accounted for laid egg during rest time before season
                     gooseAtLocationCounter[i] += 1;
                     layEggDuration = seasonCloseBlockHeight - gooseLaidEggAtBlockHeight;
                     seasonRecordIndex[seasonIndex].combineGooseLaidEggDurationInLocation[i] += layEggDuration;
@@ -355,8 +339,6 @@ contract GoldenEggGame is IGoldenEggGame, Ownable, Pausable {
             for( uint j = 0; j < crocoIdsInLocation[Location(i)].length(); j++ ) {
                 uint16 crocoID = uint16(crocoIdsInLocation[Location(i)].at(j));
                 uint32 crocoChoosePondAtBlockHeight = crocoRecordIndex[crocoID].choosePondAtBlockHeight;
-                uint256 gooseLaidEggDuringSeasonId = crocoRecordIndex[crocoID].choosePondDuringSeasonId;
-                require( crocoRecordIndex[crocoID].choosePondDuringSeasonId == getSeasonID(seasonIndex), "Invalid SeasonID"); //should already accounted for choose pond during rest time before season
                 if( crocoRecordIndex[crocoID].choosePondAtBlockHeight < seasonOpenBlockHeight ){
                     crocoPoolVoteCounter[uint8(Location.Barn)] += 1;
                 }else{
@@ -508,7 +490,6 @@ contract GoldenEggGame is IGoldenEggGame, Ownable, Pausable {
             gooseRecordIndex[gooseIds[i]].unclaimedGEGGBalance = gooseunclaimedGEGGBalance;
             gooseRecordIndex[gooseIds[i]].layEggAtBlockHeight = uint32(block.number);
             gooseRecordIndex[gooseIds[i]].layEggDuringSeasonIndex = currentSeasonIndex; // avoid duplicate rewards.
-            gooseRecordIndex[gooseIds[i]].layEggDuringSeasonId = 0;
 
             if( gooseRecordIndex[gooseIds[i]].layEggLocation != Location.Barn ){
                 gooseRecordIndex[gooseIds[i]].layEggLocation = Location.Barn;
