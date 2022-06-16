@@ -359,18 +359,23 @@ contract GoldenEggGame is IGoldenEggGame, Ownable, Pausable {
             }
         }
         for ( uint8 i = uint8(Location.Pond1); i <= uint8(Location.Pond9); i++ ){
-            if( i == first ) continue;
-            if ( gooseAtLocationCounter[i] < gooseAtLocationCounter[second] ){
-                second = i;
+            if( i == first ) {
+                continue;
             }else if( second == first ){
+                // code runs at here implies i != first, so let second = i, to make sure second and first is different.
+                second = i;
+            }
+            if ( gooseAtLocationCounter[i] < gooseAtLocationCounter[second] ){
                 second = i;
             }
         }
         for ( uint8 i = uint8(Location.Pond1); i <= uint8(Location.Pond9); i++ ){
-            if( i == second || i == first ) continue;
-            if ( gooseAtLocationCounter[i] < gooseAtLocationCounter[third] ){
+            if( i == second || i == first ) {
+                continue;
+            } else if ( third == second || third == first ){
                 third = i;
-            }else if( third == second || third == first ){
+            }
+            if ( gooseAtLocationCounter[i] < gooseAtLocationCounter[third] ){
                 third = i;
             }
         }
@@ -386,6 +391,7 @@ contract GoldenEggGame is IGoldenEggGame, Ownable, Pausable {
         winners |= second;
         winners <<= 4;
         winners |= third;
+        console.log("winners: ", winners);
         console.log("first: ", first);
         console.log("second: ", second);
         console.log("third: ", third);
