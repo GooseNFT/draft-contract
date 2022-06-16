@@ -144,7 +144,7 @@ contract GoldenEggGame is IGoldenEggGame, Ownable, Pausable {
     struct GooseRecord {
         uint16 gooseId;
         address gooseOwner;
-        uint256 unclaimedGEGGBalance;  // unclaimed balance before the time of blockNumber.
+        uint256 unclaimedGEGGBalance;  // todo: this will be eliminated. unclaimed balance before the time of blockNumber. 
         uint32 layEggDuringSeasonIndex;
         uint32 layEggAtBlockHeight;  // this blockNumber is when the Goose laid egg /switched to this location. 
         Location layEggLocation;
@@ -459,7 +459,7 @@ contract GoldenEggGame is IGoldenEggGame, Ownable, Pausable {
                     uint32 focusSeasonCloseBlockHeight = focusSeasonOpenBlockHeight + focusSeasonDuration;
                     uint32 focusSeasonRestDuration = seasonRecordIndex[j].restDuration;
 
-                    // for those Goose whose Pond is in Top 3 rank, but are overdued in this Season.
+                    // for those Goose whose Pond is not in Top 3 rank, or are overdued in this Season.
                     if( rankOfPond == 0 || layEggAtBlockHeight < (focusSeasonOpenBlockHeight - focusSeasonRestDuration) ) {
                         round_rewards = GEGG_DAILY_LIMIT * 3 / 10 / 7;   // todo: need to float type // SAME AS BARN
                         
@@ -500,6 +500,9 @@ contract GoldenEggGame is IGoldenEggGame, Ownable, Pausable {
             if( gooseRecordIndex[gooseIds[i]].layEggLocation != Location.Barn ){
                 gooseRecordIndex[gooseIds[i]].layEggLocation = Location.Barn;
             }
+
+            gegg.mint(_msgSender(), gooseunclaimedGEGGBalance);
+
         }        
         
     }

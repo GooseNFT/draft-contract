@@ -416,8 +416,8 @@ describe( "GooseNFT Contracts Test", function(){
             console.log("Token #", myTokenId.toString(), " claimed:", r['unclaimedGEGGBalance'].toString());
         }
         console.log("rewardsSum  = ", rewardSum);
-        const reward = Math.floor(rewardSum.toNumber() / 100);
-        return Promise.resolve(reward);
+        //const reward = Math.floor(rewardSum.toNumber() / 100);
+        return Promise.resolve(rewardSum.toNumber());
     }
 
     describe( "Staking Games Ver. 2", function(){
@@ -431,7 +431,9 @@ describe( "GooseNFT Contracts Test", function(){
             var closed = false;
             var afterStakeBlock = Number.MAX_SAFE_INTEGER;
 
-            var checkresult = 0;
+            var checkRewards = 0;
+
+            egg.addController(goldenegggame.address);
 
             ethers.provider.on("block", blockNumber =>{
                 if( blockNumber > afterStakeBlock && genisisBlock != 0 && !closed ){
@@ -445,7 +447,7 @@ describe( "GooseNFT Contracts Test", function(){
                         }).then( receipt => {
                             console.log("get receipt: ", receipt.blockNumber);
                             console.log("tx status: ", receipt.status);
-                            calculateRewards().then(a=>checkresult=a);
+                            calculateRewards().then(a=>checkRewards=a);
                         });
                         
                     }
@@ -479,7 +481,7 @@ describe( "GooseNFT Contracts Test", function(){
             afterStakeBlock = await ethers.provider.getBlockNumber();
             console.log(nUsers, " users have finished staking at ", afterStakeBlock);
             
-            while ( checkresult == 0 ){
+            while ( checkRewards == 0 ){
                 //console.log("wait ")
                 await sleep(1000);
             }
@@ -494,15 +496,22 @@ describe( "GooseNFT Contracts Test", function(){
                 console.log("Pool #", i, " = ", count);
             }
             console.log("ranks: ", ranks);
-            var checkNumber;
+            var checkTopNumber;
             ranks.forEach((v,i)=>{
-                checkNumber |= v;
+                checkTopNumber |= v;
                 if ( i < 2 ){
-                    checkNumber <<= 4;
+                    checkTopNumber <<= 4;
                 }
             })
-            expect(checkNumber).to.be.equal(s0['topPondsOfSession']);
-            expect( checkresult ).to.be.equal(9999);
+            var total = await egg.totalSupply()
+            console.log("gegg minted supply: ", total);
+            
+            expect(checkRewards).to.be.equal(total);
+
+            expect(checkTopNumber).to.be.equal(s0['topPondsOfSession']);
+            
+            // will fail if there is at least one empty Pond.
+            expect( Math.floor(checkRewards/ 100) ).to.be.equal(9999); 
 
         });
         
