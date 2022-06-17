@@ -409,7 +409,7 @@ contract Goose is IGoose, Traits, ERC721Enumerable, Pausable {
     }
 
     function approveBarn( uint16[] calldata gooseIds ) 
-        external
+        external onlyOwner
     {
         for (uint8 i = 0; i < gooseIds.length; i++) {
             approve( barn, gooseIds[i]);
