@@ -410,10 +410,12 @@ describe( "GooseNFT Contracts Test", function(){
         for( var i = 0; i < nUsers; i++ ){
             var myTokenId = await goldenegggame.getGooseIdsFromOwnerAddressAndIndex(users[i].address,0);
             await( await goldenegggame.connect(users[i]).gooseClaimToBalance([myTokenId])).wait();
-            const r = await goldenegggame.gooseRecordIndex(myTokenId);
+            //const r = await goldenegggame.gooseRecordIndex(myTokenId);
             //console.log(r);
-            rewardSum = rewardSum.add(r['unclaimedGEGGBalance']);
-            console.log("Token #", myTokenId.toString(), " claimed:", r['unclaimedGEGGBalance'].toString());
+            const r = await egg.balanceOf(users[i].address);
+            //console.log("balanceOf = ", r);
+            rewardSum = rewardSum.add(r);
+            console.log("Token #", myTokenId.toString(), " claimed:", r.toString());
         }
         console.log("rewardsSum  = ", rewardSum);
         //const reward = Math.floor(rewardSum.toNumber() / 100);
@@ -482,7 +484,7 @@ describe( "GooseNFT Contracts Test", function(){
             console.log(nUsers, " users have finished staking at ", afterStakeBlock);
             
             while ( checkRewards == 0 ){
-                //console.log("wait ")
+                console.log("wait ...")
                 await sleep(1000);
             }
             const s0 = await goldenegggame.seasonRecordIndex(0);
@@ -503,7 +505,7 @@ describe( "GooseNFT Contracts Test", function(){
                     checkTopNumber <<= 4;
                 }
             })
-            var total = await egg.totalSupply()
+            var total = await egg.totalSupply();
             console.log("gegg minted supply: ", total);
             
             expect(checkRewards).to.be.equal(total);

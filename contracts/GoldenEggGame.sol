@@ -114,7 +114,7 @@ contract GoldenEggGame is IGoldenEggGame, Ownable, Pausable {
     // will get updated once season closes.
     struct SeasonRecord {
         uint32 seasonOpenBlockHeight;
-        uint32 seasonCloseTriggerBlockHeight; // no need?
+        uint32 seasonCloseTriggerBlockHeight; 
         uint16 seasonDuration; // in blocks
         uint16 restDuration; // in blocks
         uint16 topPondsOfSession;  // indicate top 3 Ponds.
@@ -281,7 +281,6 @@ contract GoldenEggGame is IGoldenEggGame, Ownable, Pausable {
         }
 
         seasonOpenBlockHeight = uint32(block.number);
-        seasonCloseBlockHeight = seasonOpenBlockHeight + seasonDuration;
 
         seasonRecordIndex[seasonIndex].seasonOpenBlockHeight = seasonOpenBlockHeight;
         seasonRecordIndex[seasonIndex].seasonDuration = seasonDuration;
@@ -291,18 +290,18 @@ contract GoldenEggGame is IGoldenEggGame, Ownable, Pausable {
     }
     function seasonCloseTrigger() external {
         require ( _seasonInProgress == true, "Season has already Closed" );
-        require ( block.number > seasonCloseBlockHeight, "Season close time hasn't arrived");
+        require ( block.number > seasonOpenBlockHeight + seasonDuration, "Season close time hasn't arrived");
         _seasonInProgress = false;
 
-        uint32 seasonCloseTriggerBlockHeight = uint32(block.number);
-        seasonRecordIndex[seasonIndex].seasonCloseTriggerBlockHeight = seasonCloseTriggerBlockHeight;
+        uint32 seasonCloseBlockHeight = uint32(block.number);
+        
+        seasonRecordIndex[seasonIndex].seasonCloseTriggerBlockHeight = seasonCloseBlockHeight;
 
 
         console.log("curSeasonIndex: ", seasonIndex);
         console.log("seasonOpenBlockHeight: ", seasonOpenBlockHeight);
-        console.log("seasonCloseBlockHeight: ", seasonCloseBlockHeight);
         console.log("seasonDuration: ", seasonDuration);
-        console.log("seasonCloseTriggerBlockHeight: ", seasonCloseTriggerBlockHeight);
+        console.log("seasonCloseTriggerBlockHeight: ", seasonCloseBlockHeight);
 
         uint[] memory gooseAtLocationCounter = new uint[](10);
         uint[] memory crocoPoolVoteCounter = new uint[](10);
@@ -321,10 +320,12 @@ contract GoldenEggGame is IGoldenEggGame, Ownable, Pausable {
 
                 if( gooseLaidEggAtBlockHeight < ( seasonOpenBlockHeight - restDuration ) ){
                     gooseAtLocationCounter[uint8(Location.Barn)] += 1; 
-                    seasonRecordIndex[seasonIndex].combineGooseLaidEggDurationInLocation[uint(Location.Barn)] += seasonDuration;
+                    layEggDuration = seasonCloseBlockHeight - seasonOpenBlockHeight;
+                    seasonRecordIndex[seasonIndex].combineGooseLaidEggDurationInLocation[uint(Location.Barn)] += layEggDuration;
                 } else if( gooseLaidEggAtBlockHeight < seasonOpenBlockHeight ){ // during rest period
                     gooseAtLocationCounter[i] += 1;
-                    seasonRecordIndex[seasonIndex].combineGooseLaidEggDurationInLocation[i] += seasonDuration;
+                    layEggDuration = seasonCloseBlockHeight - seasonOpenBlockHeight;
+                    seasonRecordIndex[seasonIndex].combineGooseLaidEggDurationInLocation[i] += layEggDuration;
                 } else if ( gooseLaidEggAtBlockHeight < seasonCloseBlockHeight ){
                     gooseAtLocationCounter[i] += 1;
                     layEggDuration = seasonCloseBlockHeight - gooseLaidEggAtBlockHeight;
@@ -449,10 +450,11 @@ contract GoldenEggGame is IGoldenEggGame, Ownable, Pausable {
                     console.log("seasonID = #", j);
                     uint256 round_rewards = 0;
                     uint32 rankOfPond = getRank(layEggLocation, seasonRecordIndex[j].topPondsOfSession);
-                    uint32 layEggDuration;
+                    
                     uint32 focusSeasonOpenBlockHeight = seasonRecordIndex[j].seasonOpenBlockHeight;
-                    uint32 focusSeasonDuration = seasonRecordIndex[j].seasonDuration;
-                    uint32 focusSeasonCloseBlockHeight = focusSeasonOpenBlockHeight + focusSeasonDuration;
+                    uint32 focusSeasonCloseBlockHeight = seasonRecordIndex[j].seasonCloseTriggerBlockHeight;
+                    uint32 focusSeasonDuration = focusSeasonCloseBlockHeight - focusSeasonOpenBlockHeight;
+
                     uint32 focusSeasonRestDuration = seasonRecordIndex[j].restDuration;
 
                     // for those Goose whose Pond is not in Top 3 rank, or are overdued in this Season.
@@ -474,17 +476,27 @@ contract GoldenEggGame is IGoldenEggGame, Ownable, Pausable {
                     // TODO: blockNumber to be round up as 2000 4000 6000 8000
 
                     if( layEggAtBlockHeight < (focusSeasonOpenBlockHeight - focusSeasonRestDuration) ){
+                        console.log("layEggDuration = ", focusSeasonDuration);
                         gooseunclaimedGEGGBalance += round_rewards * focusSeasonDuration / seasonRecordIndex[j].combineGooseLaidEggDurationInLocation[uint(Location.Barn)];
                     } else if ( layEggAtBlockHeight < focusSeasonOpenBlockHeight ) {
+                        console.log("layEggDuration = ", focusSeasonDuration);
                         gooseunclaimedGEGGBalance += round_rewards * focusSeasonDuration / seasonRecordIndex[j].combineGooseLaidEggDurationInLocation[uint(layEggLocation)];
-                    } else if ( layEggAtBlockHeight < ( focusSeasonOpenBlockHeight + focusSeasonDuration ) ) {
-                        layEggDuration = ( focusSeasonOpenBlockHeight + focusSeasonDuration ) - layEggAtBlockHeight;
+                    
+                    } else if ( layEggAtBlockHeight < focusSeasonCloseBlockHeight ) {
+                        uint32 layEggDuration = focusSeasonCloseBlockHeight - layEggAtBlockHeight;
+                        console.log("layEggDuration = ", layEggDuration);
                         gooseunclaimedGEGGBalance += round_rewards * layEggDuration / seasonRecordIndex[j].combineGooseLaidEggDurationInLocation[uint(layEggLocation)];
+                    }else {
+                        console.log("mismatch, error happend");
                     }
                     
+                    console.log("focusSeasonOpenBlockHeight = ", focusSeasonOpenBlockHeight);
+                    console.log("focusSeasonCloseBlockHeight = ", focusSeasonCloseBlockHeight);
+                    console.log("layEggAtBlockHeight = ", layEggAtBlockHeight );
                     console.log("Pond No.     = ", uint(layEggLocation));
                     console.log("Pond Rank    = ", rankOfPond);
                     console.log("Round Reward = ", round_rewards);
+                    console.log("gooseunclaimedGEGGBalance = ", gooseunclaimedGEGGBalance);
                 }
             }
             // change stake blockNumber of NFT after claim, move it from Pond to Barn.
