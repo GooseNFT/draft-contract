@@ -144,7 +144,6 @@ contract GoldenEggGame is IGoldenEggGame, Ownable, Pausable {
     struct GooseRecord {
         uint16 gooseId;
         address gooseOwner;
-        uint256 unclaimedGEGGBalance;  // todo: this will be eliminated. unclaimed balance before the time of blockNumber. 
         uint32 layEggDuringSeasonIndex;
         uint32 layEggAtBlockHeight;  // this blockNumber is when the Goose laid egg /switched to this location. 
         Location layEggLocation;
@@ -153,7 +152,6 @@ contract GoldenEggGame is IGoldenEggGame, Ownable, Pausable {
     struct CrocoRecord{
         uint16 crocoId;
         address crocoOwner;
-        uint256 unclaimedGEGGBalance;
         uint32 choosePondDuringSeasonIndex;
         uint32 choosePondAtBlockHeight;
         Location chooseLocation;
@@ -217,7 +215,6 @@ contract GoldenEggGame is IGoldenEggGame, Ownable, Pausable {
             gooseRecordIndex[gooseIdsCallData[i]] = GooseRecord({
                 gooseId: gooseIdsCallData[i],
                 gooseOwner: _msgSender(),
-                unclaimedGEGGBalance: 0,
                 layEggDuringSeasonIndex: seasonIndex,
                 layEggAtBlockHeight: uint32(block.number),
                 layEggLocation: _location
@@ -251,7 +248,6 @@ contract GoldenEggGame is IGoldenEggGame, Ownable, Pausable {
             crocoRecordIndex[crocoIds[i]] = CrocoRecord({
                 crocoId: crocoIds[i],
                 crocoOwner: _user,
-                unclaimedGEGGBalance: 0,
                 choosePondDuringSeasonIndex: seasonIndex,
                 choosePondAtBlockHeight: uint32(block.number),
                 chooseLocation: _location
@@ -446,7 +442,7 @@ contract GoldenEggGame is IGoldenEggGame, Ownable, Pausable {
 
             Location layEggLocation = gooseRecordIndex[gooseIds[i]].layEggLocation;
             uint32 layEggAtBlockHeight = gooseRecordIndex[gooseIds[i]].layEggAtBlockHeight;
-            uint256 gooseunclaimedGEGGBalance = gooseRecordIndex[gooseIds[i]].unclaimedGEGGBalance;
+            uint256 gooseunclaimedGEGGBalance = 0;
 
             for ( uint32 j = layEggDuringSeasonIndex; j <= currentSeasonIndex; j ++ ){
                 if( checkSeasonExists(j) ){
@@ -493,7 +489,6 @@ contract GoldenEggGame is IGoldenEggGame, Ownable, Pausable {
             }
             // change stake blockNumber of NFT after claim, move it from Pond to Barn.
             
-            gooseRecordIndex[gooseIds[i]].unclaimedGEGGBalance = gooseunclaimedGEGGBalance;
             gooseRecordIndex[gooseIds[i]].layEggAtBlockHeight = uint32(block.number);
             gooseRecordIndex[gooseIds[i]].layEggDuringSeasonIndex = currentSeasonIndex; // avoid duplicate rewards.
 
