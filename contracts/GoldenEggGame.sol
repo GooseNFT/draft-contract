@@ -501,7 +501,6 @@ contract GoldenEggGame is IGoldenEggGame, Ownable, Pausable {
                 gooseRecordIndex[gooseIds[i]].layEggLocation = Location.Barn;
             }
 
-            //todo: the arg gooseunclaimedGEGGBalance should be carefully verified and tested.
             gegg.mint(_msgSender(), gooseunclaimedGEGGBalance);
 
         }        
