@@ -17,6 +17,7 @@ contract GEGG is ERC20, Ownable {
    * @param amount the amount of $GEGG to mint
    */
   function mint(address to, uint256 amount) external {
+    // todo: add GEGG upper limit to 1 million per day.
     require(controllers[msg.sender], "Only controllers can mint");
     _mint(to, amount);
   }

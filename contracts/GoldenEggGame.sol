@@ -19,8 +19,8 @@ contract GoldenEggGame is IGoldenEggGame, Ownable, Pausable {
     bool isTestRun = true;
 
     //// GEGG parameters
-    uint constant multiplier = 1;
-    uint public constant GEGG_DAILY_LIMIT = 1000000 * multiplier;
+    uint constant multiplier = 1; // todo: need to change to 10**8 
+    uint public constant GEGG_DAILY_LIMIT = 1000000 * multiplier;  // todo: change name to season limit.
 
     //// SEASON parameters
     uint16 public seasonDuration = 115;

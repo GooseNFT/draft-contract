@@ -11,7 +11,7 @@ import "./GEGG.sol";
 
 contract Goose is IGoose, Traits, ERC721Enumerable, Pausable {
     // mint price
-    uint256 public constant MINT_PRICE = .08 ether;
+    uint256 public constant MINT_PRICE = .08 ether; // todo: add this to constructor
     // max number of Goose that can be minted - 50000 in production
     uint256 public immutable MAX_NUMBER_OF_GOOSES;
 
